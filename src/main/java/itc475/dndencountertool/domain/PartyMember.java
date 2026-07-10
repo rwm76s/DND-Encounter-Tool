@@ -2,6 +2,7 @@ package itc475.dndencountertool.domain;
 
 import jakarta.persistence.*;
 
+// Mapping SQL table columns to class attributes
 @Entity
 @Table(name = "party_members")
 public class PartyMember {
