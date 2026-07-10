@@ -1,10 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Register - DND Encounter Tool</title>
 </head>
 <body>
+<h1>Register</h1>
 
+<p th:if="${error}" style="color: red;" th:text="${error}"></p>
+
+<form th:action="@{/register}" th:object="${user}" method="post">
+    <label for="username">Username</label>
+    <input type="text" id="username" th:field="*{username}" required>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" th:field="*{password}" required>
+
+    <button type="submit">Register</button>
+</form>
+
+<p>Already have an account? <a th:href="@{/login}">Log in</a></p>
 </body>
 </html>
