@@ -10,7 +10,7 @@ public class Status {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 15)
+    @Column(length = 25)
     private String status;
 
     @ManyToOne
