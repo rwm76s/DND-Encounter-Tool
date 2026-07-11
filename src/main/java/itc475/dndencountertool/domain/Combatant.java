@@ -88,7 +88,7 @@ public class Combatant {
         return incapacitated;
     }
 
-    public void setincapacitated(boolean incapacitated) {
+    public void setIncapacitated(boolean incapacitated) {
         this.incapacitated = incapacitated;
     }
 

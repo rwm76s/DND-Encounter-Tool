@@ -3,21 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <title th:text="${encounter.name}">Encounter</title>
+  <style>
+    .combatant-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .combatant-tile {
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .combatant-tile.incapacitated {
+        opacity: 0.5;
+        background-color: #fdd;
+    }
+    .combatant-tile label {
+        display: block;
+        font-size: 0.8em;
+        margin-top: 6px;
+    }
+    .combatant-tile input[type="number"] {
+        width: 60px;
+    }
+  </style>
 </head>
 <body>
 <p><a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}">&larr; Back to Campaign</a></p>
 
 <h1 th:text="${encounter.name}"></h1>
+<form th:action="@{/encounters/{id}/toggle-complete(id=${encounter.id})}" method="post">
+  <button type="submit" th:text="${encounter.complete} ? 'Mark as Active' : 'Mark as Complete'"></button>
+</form>
 
 <h2>Combatants</h2>
-<ul>
-  <li th:each="c : ${combatants}">
-    <span th:text="${c.name}"></span>
-    <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
-    <span th:if="${c.initiative != null}" th:text="${' - Initiative: ' + c.initiative}"></span>
-    <span th:if="${!c.player and c.hp != null}" th:text="${' - HP: ' + c.hp + '/' + c.maxHp}"></span>
-  </li>
-</ul>
+<div class="combatant-grid">
+  <div th:each="c : ${combatants}"
+       class="combatant-tile"
+       th:classappend="${c.incapacitated} ? 'incapacitated' : ''">
+
+    <form th:action="@{/encounters/{eid}/combatants/{cid}(eid=${encounter.id},cid=${c.id})}" method="post">
+      <strong th:text="${c.name}"></strong>
+      <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
+
+      <label>
+        Initiative
+        <input type="number" name="initiative" th:value="${c.initiative}">
+      </label>
+
+      <div th:unless="${c.player}">
+        <label>
+          HP
+          <input type="number" name="hp" th:value="${c.hp}">
+        </label>
+        <label>
+          Max HP
+          <input type="number" name="maxHp" th:value="${c.maxHp}">
+        </label>
+      </div>
+
+      <label>
+        <input type="checkbox" name="incapacitated" value="true" th:checked="${c.incapacitated}">
+        Incapacitated
+      </label>
+
+      <button type="submit">Update</button>
+    </form>
+
+    <div class="statuses">
+      <strong>Statuses:</strong>
+      <ul>
+        <li th:each="s : ${c.statuses}">
+          <span th:text="${s.status}"></span>
+          <form th:action="@{/statuses/{sid}/delete(sid=${s.id})}" method="post" style="display:inline;">
+            <button type="submit">x</button>
+          </form>
+        </li>
+        <li th:if="${c.statuses.isEmpty()}">None</li>
+      </ul>
+
+      <form th:action="@{/combatants/{cid}/statuses(cid=${c.id})}" method="post">
+        <input type="text" name="status" placeholder="Add status" maxlength="25" required>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+  </div>
+
+  <p th:if="${combatants.isEmpty()}">No combatants yet.</p>
+</div>
+
 <a th:href="@{/encounters/{id}/combatants/new(id=${encounter.id})}">+ Add NPC/Enemy</a>
 </body>
 </html>
