@@ -8,4 +8,5 @@ import java.util.List;
 // Field mapping done within class definition
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     List<Campaign> findByUserId(Long userId);
+    List<Campaign> findByUserIdOrderByCompleteAscNameAsc(Long userId);
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${encounter.name}">Encounter</title>
+</head>
+<body>
+<p><a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}">&larr; Back to Campaign</a></p>
+
+<h1 th:text="${encounter.name}"></h1>
+
+<h2>Combatants</h2>
+<ul>
+  <li th:each="c : ${combatants}">
+    <span th:text="${c.name}"></span>
+    <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
+    <span th:if="${c.initiative != null}" th:text="${' - Initiative: ' + c.initiative}"></span>
+    <span th:if="${!c.player and c.hp != null}" th:text="${' - HP: ' + c.hp + '/' + c.maxHp}"></span>
+  </li>
+</ul>
+<a th:href="@{/encounters/{id}/combatants/new(id=${encounter.id})}">+ Add NPC/Enemy</a>
+</body>
+</html>
