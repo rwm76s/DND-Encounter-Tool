@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${campaign.name}">Campaign</title>
+</head>
+<body>
+<p><a th:href="@{/campaigns}">&larr; Back to Campaigns</a></p>
+
+<h1 th:text="${campaign.name}"></h1>
+<p th:if="${campaign.complete}">Status: Completed</p>
+<p th:unless="${campaign.complete}">Status: Active</p>
+
+<h2>Party Members</h2>
+<ul>
+    <li th:each="member : ${partyMembers}">
+        <span th:text="${member.name}"></span>
+        <span th:if="${!member.active}"> (inactive)</span>
+    </li>
+    <li th:if="${partyMembers.isEmpty()}">No party members yet.</li>
+</ul>
+<a th:href="@{/campaigns/{id}/party-members/new(id=${campaign.id})}">+ Add Party Member</a>
+
+<h2>Encounters</h2>
+<ul>
+    <li th:each="encounter : ${encounters}">
+        <a th:href="@{/encounters/{id}(id=${encounter.id})}" th:text="${encounter.name}"></a>
+        <span th:if="${encounter.complete}"> (completed)</span>
+    </li>
+    <li th:if="${encounters.isEmpty()}">No encounters yet.</li>
+</ul>
+<a th:href="@{/campaigns/{id}/encounters/new(id=${campaign.id})}">+ Add Encounter</a>
+</body>
+</html>

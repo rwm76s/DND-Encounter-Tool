@@ -1,11 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Demo page</title>
+    <title>My Campaigns</title>
+    <style>
+        .campaign-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .campaign-tile {
+            width: 180px;
+            height: 120px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 12px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .campaign-tile.complete {
+            opacity: 0.6;
+        }
+        .campaign-tile.new-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            border-style: dashed;
+        }
+    </style>
 </head>
 <body>
-<h1>Welcome to Campaigns!</h1>
+<h1>My Campaigns</h1>
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Log Out</button>
+</form>
 
+<div class="campaign-grid">
+    <a th:href="@{/campaigns/new}" class="campaign-tile new-tile">+</a>
+
+    <a th:each="campaign : ${campaigns}"
+       th:href="@{/campaigns/{id}(id=${campaign.id})}"
+       th:classappend="${campaign.complete} ? 'complete' : ''"
+       class="campaign-tile">
+        <span th:text="${campaign.name}"></span>
+        <span th:if="${campaign.complete}">Completed</span>
+    </a>
+</div>
 </body>
 </html>

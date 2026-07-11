@@ -24,7 +24,7 @@ public class Combatant {
     private Integer maxHp;
 
     @Column(nullable = false)
-    private boolean dead = false;
+    private boolean incapacitated = false;
 
     private boolean player;
 
@@ -84,12 +84,12 @@ public class Combatant {
         this.maxHp = maxHp;
     }
 
-    public boolean isDead() {
-        return dead;
+    public boolean isIncapacitated() {
+        return incapacitated;
     }
 
-    public void setDead(boolean dead) {
-        this.dead = dead;
+    public void setincapacitated(boolean incapacitated) {
+        this.incapacitated = incapacitated;
     }
 
     public boolean isPlayer() {
