@@ -10,12 +10,18 @@
 <h1 th:text="${campaign.name}"></h1>
 <p th:if="${campaign.complete}">Status: Completed</p>
 <p th:unless="${campaign.complete}">Status: Active</p>
+<form th:action="@{/campaigns/{id}/toggle-complete(id=${campaign.id})}" method="post">
+    <button type="submit" th:text="${campaign.complete} ? 'Mark as Active' : 'Mark as Complete'"></button>
+</form>
 
 <h2>Party Members</h2>
 <ul>
     <li th:each="member : ${partyMembers}">
         <span th:text="${member.name}"></span>
         <span th:if="${!member.active}"> (inactive)</span>
+        <form th:action="@{/party-members/{id}/toggle-active(id=${member.id})}" method="post" style="display:inline;">
+            <button type="submit" th:text="${member.active} ? 'Set Inactive' : 'Set Active'"></button>
+        </form>
     </li>
     <li th:if="${partyMembers.isEmpty()}">No party members yet.</li>
 </ul>

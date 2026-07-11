@@ -56,4 +56,18 @@ public class PartyMemberController {
 
         return campaign;
     }
+
+    @PostMapping("/party-members/{id}/toggle-active")
+    public String togglePartyMemberActive(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        PartyMember member = partyMemberRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!member.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        member.setActive(!member.isActive());
+        partyMemberRepository.save(member);
+        return "redirect:/campaigns/" + member.getCampaign().getId();
+    }
 }

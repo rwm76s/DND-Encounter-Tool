@@ -64,4 +64,23 @@ public class CampaignController {
 
         return "campaign-details";
     }
+
+    private Campaign getOwnedCampaignOrThrow(Long campaignId, User user) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!campaign.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return campaign;
+    }
+
+    @PostMapping("/campaigns/{id}/toggle-complete")
+    public String toggleCampaignComplete(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        Campaign campaign = getOwnedCampaignOrThrow(id, user);
+        campaign.setComplete(!campaign.isComplete());
+        campaignRepository.save(campaign);
+        return "redirect:/campaigns/" + id;
+    }
 }

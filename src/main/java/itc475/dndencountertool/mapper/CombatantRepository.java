@@ -8,4 +8,5 @@ import java.util.List;
 // Field mapping done within class definition
 public interface CombatantRepository extends JpaRepository<Combatant, Long> {
     List<Combatant> findByEncounterId(Long encounterId);
+    List<Combatant> findByEncounterIdOrderByInitiativeDesc(Long encounterId);
 }
