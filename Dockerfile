@@ -1,17 +1,44 @@
-FROM ubuntu:latest
-LABEL authors="rmcgr"
+# syntax=docker/dockerfile:1
 
-# Stage 1: Build
-FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /app
+FROM eclipse-temurin:17-jdk-jammy AS deps
+
+WORKDIR /build
+
+COPY --chmod=0755 mvnw mvnw
+COPY .mvn/ .mvn/
+
+RUN --mount=type=bind,source=pom.xml,target=pom.xml \
+    --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
+
+################################################################################
+
+FROM deps AS package
+
+WORKDIR /build
+
 COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-RUN mvn clean package
+COPY ./src src/
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw package -DskipTests && \
+    mv target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)-$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout).jar target/app.jar
 
-# Stage 2: Run
-FROM eclipse-temurin:17-jre
-WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+################################################################################
+
+FROM eclipse-temurin:17-jre-jammy AS final
+
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    appuser
+USER appuser
+
+COPY --from=package /build/target/app.jar app.jar
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+ENTRYPOINT [ "java", "-jar", "app.jar" ]
