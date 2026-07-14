@@ -1,6 +1,9 @@
 package itc475.dndencountertool.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +33,7 @@ public class Combatant {
 
     @ManyToOne
     @JoinColumn(name = "encounter_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Encounter encounter;
 
     @OneToMany(mappedBy = "combatant")

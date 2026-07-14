@@ -1,6 +1,8 @@
 package itc475.dndencountertool.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "statuses")
@@ -15,6 +17,7 @@ public class Status {
 
     @ManyToOne
     @JoinColumn(name = "combatant_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Combatant combatant;
 
     public Status() {

@@ -1,6 +1,8 @@
 package itc475.dndencountertool.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 // Mapping SQL table columns to class attributes
 @Entity
@@ -19,6 +21,7 @@ public class PartyMember {
 
     @ManyToOne
     @JoinColumn(name = "campaign_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Campaign campaign;
 
     public PartyMember() {
