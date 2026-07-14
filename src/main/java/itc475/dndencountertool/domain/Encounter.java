@@ -27,6 +27,11 @@ public class Encounter {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Campaign campaign;
 
+    @ManyToOne
+    @JoinColumn(name = "current_turn_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private Combatant currentTurn;
+
     @OneToMany(mappedBy = "encounter")
     private List<Combatant> combatants = new ArrayList<>();
 
@@ -76,5 +81,13 @@ public class Encounter {
 
     public void setCombatants(List<Combatant> combatants) {
         this.combatants = combatants;
+    }
+
+    public Combatant getCurrentTurn() {
+        return currentTurn;
+    }
+
+    public void setCurrentTurn(Combatant currentTurn) {
+        this.currentTurn = currentTurn;
     }
 }
