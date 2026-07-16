@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title th:text="${encounter.name}">Encounter</title>
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
   <style>
     .combatant-grid {
         display: flex;
@@ -12,6 +14,12 @@
     .combatant-tile {
         width: 200px;
         border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .current-turn {
+        width: 200px;
+        border: 5px solid #ccc;
         border-radius: 8px;
         padding: 12px;
     }
@@ -28,6 +36,34 @@
         width: 60px;
     }
   </style>
+  <script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    async function apiFetch(url, options = {}) {
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken,
+                ...(options.headers || {})
+            };
+
+            const response = await fetch(url, { ...options, headers });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Request failed (${response.status}): ${text}`);
+            }
+
+            if (response.status === 204) return null;
+            return await response.json();
+        } catch (err) {
+            console.error('apiFetch error:', err);
+            alert('Something went wrong: ' + err.message);
+            throw err;
+        }
+    }
+  </script>
 </head>
 <body>
 <p><a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}">&larr; Back to Campaign</a></p>
@@ -38,38 +74,41 @@
 </form>
 
 <h2>Combatants</h2>
+<button type="button" onclick="previousTurn()">Previous Turn</button>
+<button type="button" onclick="nextTurn()">Next Turn</button>
 <div class="combatant-grid">
   <div th:each="c : ${combatants}"
        class="combatant-tile"
-       th:classappend="${c.incapacitated} ? 'incapacitated' : ''">
+       th:classappend="${c.incapacitated} ? 'incapacitated' : ''"
+       th:data-combatant-id="${c.id}"
+       th:data-incapacitated="${c.incapacitated}"
+       th:data-initiative="${c.initiative}">
 
-    <form th:action="@{/encounters/{eid}/combatants/{cid}(eid=${encounter.id},cid=${c.id})}" method="post">
-      <strong th:text="${c.name}"></strong>
-      <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
+    <strong th:text="${c.name}"></strong>
+    <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
 
+    <label>
+      Initiative
+      <input type="number" class="initiative-input" th:value="${c.initiative}">
+    </label>
+
+    <div th:unless="${c.player}">
       <label>
-        Initiative
-        <input type="number" name="initiative" th:value="${c.initiative}">
+        HP
+        <input type="number" class="hp-input" th:value="${c.hp}">
       </label>
-
-      <div th:unless="${c.player}">
-        <label>
-          HP
-          <input type="number" name="hp" th:value="${c.hp}">
-        </label>
-        <label>
-          Max HP
-          <input type="number" name="maxHp" th:value="${c.maxHp}">
-        </label>
-      </div>
-
       <label>
-        <input type="checkbox" name="incapacitated" value="true" th:checked="${c.incapacitated}">
-        Incapacitated
+        Max HP
+        <input type="number" class="maxhp-input" th:value="${c.maxHp}">
       </label>
+    </div>
 
-      <button type="submit">Update</button>
-    </form>
+    <label>
+      <input type="checkbox" class="incapacitated-input" th:checked="${c.incapacitated}">
+      Incapacitated
+    </label>
+
+    <button type="button" class="update-btn">Update</button>
 
     <div class="statuses">
       <strong>Statuses:</strong>
@@ -94,5 +133,121 @@
 </div>
 
 <a th:href="@{/encounters/{id}/combatants/new(id=${encounter.id})}">+ Add NPC/Enemy</a>
+<script th:inline="javascript">
+  const encounterId = /*[[${encounter.id}]]*/ 0;
+  const initialTurnId = /*[[${encounter.currentTurn != null ? encounter.currentTurn.id : null}]]*/ null;
+
+  let currentTurnId = initialTurnId;
+
+  function getTiles() {
+      return Array.from(document.querySelectorAll('.combatant-tile'));
+  }
+
+  async function saveCurrentTurn(combatantId) {
+      return apiFetch(`/api/encounters/${encounterId}/current-turn`, {
+          method: 'PUT',
+          body: JSON.stringify({ combatantId })
+      });
+  }
+
+  function highlightCurrentTurn() {
+      getTiles().forEach(tile => {
+          tile.classList.toggle('current-turn', tile.dataset.combatantId === String(currentTurnId));
+      });
+  }
+
+  function findNextLivingIndex(tiles, startIndex, direction) {
+      if (tiles.length === 0) return -1;
+
+      let index = startIndex;
+      for (let attempts = 0; attempts < tiles.length; attempts++) {
+          index = ((index + direction) % tiles.length + tiles.length) % tiles.length;
+          if (tiles[index].dataset.incapacitated !== 'true') {
+              return index;
+          }
+      }
+      return -1;
+  }
+
+  async function goToTurn(direction) {
+      const tiles = getTiles();
+      if (tiles.length === 0) return;
+
+      const startIndex = tiles.findIndex(tile => tile.dataset.combatantId === String(currentTurnId));
+      const newIndex = findNextLivingIndex(tiles, startIndex === -1 ? -1 : startIndex, direction);
+      if (newIndex === -1) return;
+
+      const combatantId = tiles[newIndex].dataset.combatantId;
+
+      await saveCurrentTurn(Number(combatantId));
+      currentTurnId = Number(combatantId);
+      highlightCurrentTurn();
+  }
+
+  function nextTurn() {
+      goToTurn(1);
+  }
+
+  function previousTurn() {
+      goToTurn(-1);
+  }
+
+  function sortTilesByInitiative() {
+      const grid = document.querySelector('.combatant-grid');
+      const tileArray = getTiles();
+
+      tileArray.sort((a, b) => {
+          const initA = a.dataset.initiative === '' || a.dataset.initiative === undefined
+              ? null : Number(a.dataset.initiative);
+          const initB = b.dataset.initiative === '' || b.dataset.initiative === undefined
+              ? null : Number(b.dataset.initiative);
+
+          if (initA === null && initB === null) return 0;
+          if (initA === null) return 1;
+          if (initB === null) return -1;
+          return initB - initA;
+      });
+
+      tileArray.forEach(tile => grid.appendChild(tile));
+  }
+
+  async function updateCombatant(combatantId, data) {
+      return apiFetch(`/api/combatants/${combatantId}`, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+      });
+  }
+
+  getTiles().forEach(tile => {
+      const updateBtn = tile.querySelector('.update-btn');
+      if (!updateBtn) return;
+
+      updateBtn.addEventListener('click', async () => {
+          const combatantId = tile.dataset.combatantId;
+
+          const initiativeInput = tile.querySelector('.initiative-input');
+          const hpInput = tile.querySelector('.hp-input');
+          const maxHpInput = tile.querySelector('.maxhp-input');
+          const incapacitatedInput = tile.querySelector('.incapacitated-input');
+
+          const payload = {
+              initiative: initiativeInput.value === '' ? null : Number(initiativeInput.value),
+              hp: hpInput ? (hpInput.value === '' ? null : Number(hpInput.value)) : null,
+              maxHp: maxHpInput ? (maxHpInput.value === '' ? null : Number(maxHpInput.value)) : null,
+              incapacitated: incapacitatedInput.checked
+          };
+
+          const updated = await updateCombatant(combatantId, payload);
+
+          tile.dataset.incapacitated = updated.incapacitated;
+          tile.dataset.initiative = updated.initiative === null ? '' : updated.initiative;
+          tile.classList.toggle('incapacitated', updated.incapacitated);
+          highlightCurrentTurn();
+          sortTilesByInitiative();
+      });
+  });
+
+  highlightCurrentTurn();
+</script>
 </body>
 </html>
