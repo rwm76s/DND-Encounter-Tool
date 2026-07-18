@@ -16,12 +16,17 @@
         border: 1px solid #ccc;
         border-radius: 8px;
         padding: 12px;
+        position: relative;
+        padding-bottom: 36px;
+        margin-top: 15px;
+        margin-bottom: 15px;
     }
     .current-turn {
         width: 200px;
-        border: 5px solid #ccc;
+        outline: 5px solid #ccc;
         border-radius: 8px;
-        padding: 12px;
+        margin-top: 15px;
+        margin-bottom: 15px;
     }
     .combatant-tile.incapacitated {
         opacity: 0.5;
@@ -34,6 +39,58 @@
     }
     .combatant-tile input[type="number"] {
         width: 60px;
+    }
+
+    .add-status-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 1.1em;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .status-list {
+        list-style: none;
+        padding-left: 0;
+        margin: 4px 0;
+    }
+
+    .status-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-box {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        min-width: 280px;
+    }
+
+    .modal-actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
     }
   </style>
   <script>
@@ -111,28 +168,57 @@
     <button type="button" class="update-btn">Update</button>
 
     <div class="statuses">
-      <strong>Statuses:</strong>
-      <ul>
-        <li th:each="s : ${c.statuses}">
+      <strong class="statuses-label" th:if="${!c.statuses.isEmpty()}">Statuses:</strong>
+      <ul class="status-list">
+        <li th:each="s : ${c.statuses}" th:data-status-id="${s.id}">
           <span th:text="${s.status}"></span>
-          <form th:action="@{/statuses/{sid}/delete(sid=${s.id})}" method="post" style="display:inline;">
-            <button type="submit">x</button>
-          </form>
+          <button type="button" class="delete-status-btn">x</button>
         </li>
-        <li th:if="${c.statuses.isEmpty()}">None</li>
       </ul>
-
-      <form th:action="@{/combatants/{cid}/statuses(cid=${c.id})}" method="post">
-        <input type="text" name="status" placeholder="Add status" maxlength="25" required>
-        <button type="submit">Add</button>
-      </form>
     </div>
+
+    <button type="button" class="add-status-btn">+</button>
   </div>
 
   <p th:if="${combatants.isEmpty()}">No combatants yet.</p>
 </div>
+<div id="status-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3>Add Status</h3>
+    <input type="text" id="status-modal-input" maxlength="25" placeholder="e.g. Poisoned">
+    <div class="modal-actions">
+      <button type="button" id="status-modal-cancel">Cancel</button>
+      <button type="button" id="status-modal-save">Add</button>
+    </div>
+  </div>
+</div>
+<div id="combatant-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3>Add NPC/Enemy</h3>
+    <label>
+      Name
+      <input type="text" id="combatant-modal-name" maxlength="30">
+    </label>
+    <label>
+      Initiative
+      <input type="number" id="combatant-modal-initiative">
+    </label>
+    <label>
+      HP
+      <input type="number" id="combatant-modal-hp">
+    </label>
+    <label>
+      Max HP
+      <input type="number" id="combatant-modal-maxhp">
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="combatant-modal-cancel">Cancel</button>
+      <button type="button" id="combatant-modal-save">Add</button>
+    </div>
+  </div>
+</div>
 
-<a th:href="@{/encounters/{id}/combatants/new(id=${encounter.id})}">+ Add NPC/Enemy</a>
+<button type="button" id="add-combatant-btn">+ Add NPC/Enemy</button>
 <script th:inline="javascript">
   const encounterId = /*[[${encounter.id}]]*/ 0;
   const initialTurnId = /*[[${encounter.currentTurn != null ? encounter.currentTurn.id : null}]]*/ null;
@@ -218,35 +304,225 @@
       });
   }
 
-  getTiles().forEach(tile => {
-      const updateBtn = tile.querySelector('.update-btn');
-      if (!updateBtn) return;
+  async function addStatusRequest(combatantId, statusText) {
+    return apiFetch(`/api/combatants/${combatantId}/statuses`, {
+        method: 'POST',
+        body: JSON.stringify({ status: statusText })
+    });
+  }
 
-      updateBtn.addEventListener('click', async () => {
-          const combatantId = tile.dataset.combatantId;
+  async function deleteStatusRequest(statusId) {
+      return apiFetch(`/api/statuses/${statusId}`, { method: 'DELETE' });
+  }
 
-          const initiativeInput = tile.querySelector('.initiative-input');
-          const hpInput = tile.querySelector('.hp-input');
-          const maxHpInput = tile.querySelector('.maxhp-input');
-          const incapacitatedInput = tile.querySelector('.incapacitated-input');
+  function refreshStatusLabel(tile) {
+      const statusesDiv = tile.querySelector('.statuses');
+      const list = statusesDiv.querySelector('.status-list');
+      let label = statusesDiv.querySelector('.statuses-label');
 
-          const payload = {
-              initiative: initiativeInput.value === '' ? null : Number(initiativeInput.value),
-              hp: hpInput ? (hpInput.value === '' ? null : Number(hpInput.value)) : null,
-              maxHp: maxHpInput ? (maxHpInput.value === '' ? null : Number(maxHpInput.value)) : null,
-              incapacitated: incapacitatedInput.checked
-          };
+      const hasStatuses = list.children.length > 0;
 
-          const updated = await updateCombatant(combatantId, payload);
+      if (hasStatuses && !label) {
+          label = document.createElement('strong');
+          label.className = 'statuses-label';
+          label.textContent = 'Statuses:';
+          statusesDiv.insertBefore(label, list);
+      } else if (!hasStatuses && label) {
+          label.remove();
+      }
+  }
 
-          tile.dataset.incapacitated = updated.incapacitated;
-          tile.dataset.initiative = updated.initiative === null ? '' : updated.initiative;
-          tile.classList.toggle('incapacitated', updated.incapacitated);
-          highlightCurrentTurn();
-          sortTilesByInitiative();
+  function attachDeleteHandler(button) {
+      button.addEventListener('click', async () => {
+          const li = button.closest('li');
+          const tile = li.closest('.combatant-tile');
+          const statusId = li.dataset.statusId;
+
+          await deleteStatusRequest(statusId);
+          li.remove();
+          refreshStatusLabel(tile);
       });
+  }
+
+  const modal = document.getElementById('status-modal');
+  const modalInput = document.getElementById('status-modal-input');
+  const modalCancelBtn = document.getElementById('status-modal-cancel');
+  const modalSaveBtn = document.getElementById('status-modal-save');
+
+  let modalTargetTile = null;
+
+  function openStatusModal(tile) {
+      modalTargetTile = tile;
+      modalInput.value = '';
+      modal.style.display = 'flex';
+      modalInput.focus();
+  }
+
+  function closeStatusModal() {
+      modal.style.display = 'none';
+      modalTargetTile = null;
+  }
+
+  modalCancelBtn.addEventListener('click', closeStatusModal);
+
+  modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeStatusModal();
   });
 
+  modalSaveBtn.addEventListener('click', async () => {
+      const statusText = modalInput.value.trim();
+      if (!statusText || !modalTargetTile) return;
+
+      const combatantId = modalTargetTile.dataset.combatantId;
+      const newStatus = await addStatusRequest(combatantId, statusText);
+
+      const list = modalTargetTile.querySelector('.status-list');
+      const li = document.createElement('li');
+      li.dataset.statusId = newStatus.id;
+      li.innerHTML = `<span></span><button type="button" class="delete-status-btn">x</button>`;
+      li.querySelector('span').textContent = newStatus.status;
+      attachDeleteHandler(li.querySelector('.delete-status-btn'));
+      list.appendChild(li);
+
+      refreshStatusLabel(modalTargetTile);
+      closeStatusModal();
+  });
+
+  function initTile(tile) {
+    const updateBtn = tile.querySelector('.update-btn');
+    if (updateBtn) {
+        updateBtn.addEventListener('click', async () => {
+            const combatantId = tile.dataset.combatantId;
+
+            const initiativeInput = tile.querySelector('.initiative-input');
+            const hpInput = tile.querySelector('.hp-input');
+            const maxHpInput = tile.querySelector('.maxhp-input');
+            const incapacitatedInput = tile.querySelector('.incapacitated-input');
+
+            const payload = {
+                initiative: initiativeInput.value === '' ? null : Number(initiativeInput.value),
+                hp: hpInput ? (hpInput.value === '' ? null : Number(hpInput.value)) : null,
+                maxHp: maxHpInput ? (maxHpInput.value === '' ? null : Number(maxHpInput.value)) : null,
+                incapacitated: incapacitatedInput.checked
+            };
+
+            const updated = await updateCombatant(combatantId, payload);
+
+            tile.dataset.incapacitated = updated.incapacitated;
+            tile.dataset.initiative = updated.initiative === null ? '' : updated.initiative;
+            tile.classList.toggle('incapacitated', updated.incapacitated);
+            highlightCurrentTurn();
+            sortTilesByInitiative();
+        });
+    }
+
+    const addStatusBtn = tile.querySelector('.add-status-btn');
+    if (addStatusBtn) {
+        addStatusBtn.addEventListener('click', () => openStatusModal(tile));
+    }
+
+    tile.querySelectorAll('.delete-status-btn').forEach(attachDeleteHandler);
+}
+
+function buildCombatantTile(data) {
+    const tile = document.createElement('div');
+    tile.className = 'combatant-tile';
+    tile.dataset.combatantId = data.id;
+    tile.dataset.incapacitated = data.incapacitated;
+    tile.dataset.initiative = data.initiative === null ? '' : data.initiative;
+
+    const hpBlock = data.player ? '' : `
+        <div>
+            <label>HP
+                <input type="number" class="hp-input" value="${data.hp ?? ''}">
+            </label>
+            <label>Max HP
+                <input type="number" class="maxhp-input" value="${data.maxHp ?? ''}">
+            </label>
+        </div>
+    `;
+
+    tile.innerHTML = `
+        <strong></strong>
+        <span>${data.player ? ' (Player)' : ' (NPC)'}</span>
+        <label>Initiative
+            <input type="number" class="initiative-input" value="${data.initiative ?? ''}">
+        </label>
+        ${hpBlock}
+        <label>
+            <input type="checkbox" class="incapacitated-input" ${data.incapacitated ? 'checked' : ''}>
+            Incapacitated
+        </label>
+        <button type="button" class="update-btn">Update</button>
+        <div class="statuses">
+            <ul class="status-list"></ul>
+        </div>
+        <button type="button" class="add-status-btn">+</button>
+    `;
+
+    tile.querySelector('strong').textContent = data.name;
+
+    return tile;
+}
+
+async function createCombatant(encounterId, data) {
+    return apiFetch(`/api/encounters/${encounterId}/combatants`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+}
+
+const combatantModal = document.getElementById('combatant-modal');
+const combatantNameInput = document.getElementById('combatant-modal-name');
+const combatantInitiativeInput = document.getElementById('combatant-modal-initiative');
+const combatantHpInput = document.getElementById('combatant-modal-hp');
+const combatantMaxHpInput = document.getElementById('combatant-modal-maxhp');
+const combatantModalCancelBtn = document.getElementById('combatant-modal-cancel');
+const combatantModalSaveBtn = document.getElementById('combatant-modal-save');
+const addCombatantBtn = document.getElementById('add-combatant-btn');
+
+function openCombatantModal() {
+    combatantNameInput.value = '';
+    combatantInitiativeInput.value = '';
+    combatantHpInput.value = '';
+    combatantMaxHpInput.value = '';
+    combatantModal.style.display = 'flex';
+    combatantNameInput.focus();
+}
+
+function closeCombatantModal() {
+    combatantModal.style.display = 'none';
+}
+
+addCombatantBtn.addEventListener('click', openCombatantModal);
+combatantModalCancelBtn.addEventListener('click', closeCombatantModal);
+
+combatantModal.addEventListener('click', (event) => {
+    if (event.target === combatantModal) closeCombatantModal();
+});
+
+combatantModalSaveBtn.addEventListener('click', async () => {
+    const name = combatantNameInput.value.trim();
+    if (!name) return;
+
+    const payload = {
+        name: name,
+        initiative: combatantInitiativeInput.value === '' ? null : Number(combatantInitiativeInput.value),
+        hp: combatantHpInput.value === '' ? null : Number(combatantHpInput.value),
+        maxHp: combatantMaxHpInput.value === '' ? null : Number(combatantMaxHpInput.value)
+    };
+
+    const newCombatant = await createCombatant(encounterId, payload);
+
+    const tile = buildCombatantTile(newCombatant);
+    document.querySelector('.combatant-grid').appendChild(tile);
+    initTile(tile);
+    sortTilesByInitiative();
+
+    closeCombatantModal();
+});
+
+  getTiles().forEach(tile => initTile(tile))
   highlightCurrentTurn();
 </script>
 </body>
