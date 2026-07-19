@@ -11,6 +11,7 @@
         flex-wrap: wrap;
         gap: 16px;
     }
+
     .combatant-tile {
         width: 200px;
         border: 1px solid #ccc;
@@ -21,6 +22,7 @@
         margin-top: 15px;
         margin-bottom: 15px;
     }
+
     .current-turn {
         width: 200px;
         outline: 5px solid #ccc;
@@ -28,15 +30,18 @@
         margin-top: 15px;
         margin-bottom: 15px;
     }
+
     .combatant-tile.incapacitated {
         opacity: 0.5;
         background-color: #fdd;
     }
+
     .combatant-tile label {
         display: block;
         font-size: 0.8em;
         margin-top: 6px;
     }
+
     .combatant-tile input[type="number"] {
         width: 60px;
     }
@@ -80,10 +85,28 @@
     }
 
     .modal-box {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        min-width: 280px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-box label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.9em;
+    }
+
+    .modal-box input[type="text"],
+    .modal-box input[type="number"] {
+        padding: 6px 8px;
+        font-size: 1em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
     }
 
     .modal-actions {
@@ -91,6 +114,27 @@
         display: flex;
         justify-content: flex-end;
         gap: 8px;
+    }
+
+    .delete-combatant-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .hp-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .hp-group input {
+        width: 45px;
     }
   </style>
   <script>
@@ -141,6 +185,8 @@
        th:data-incapacitated="${c.incapacitated}"
        th:data-initiative="${c.initiative}">
 
+    <button type="button" class="delete-combatant-btn">&times;</button>
+
     <strong th:text="${c.name}"></strong>
     <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
 
@@ -150,13 +196,17 @@
     </label>
 
     <div th:unless="${c.player}">
-      <label>
+      <label class="hp-label">
         HP
-        <input type="number" class="hp-input" th:value="${c.hp}">
+        <span class="hp-group">
+                <input type="number" class="hp-input" th:value="${c.hp}">
+                <span>/</span>
+                <input type="number" class="maxhp-input" th:value="${c.maxHp}">
+            </span>
       </label>
       <label>
-        Max HP
-        <input type="number" class="maxhp-input" th:value="${c.maxHp}">
+        AC
+        <input type="number" class="ac-input" th:value="${c.ac}">
       </label>
     </div>
 
@@ -195,22 +245,31 @@
 <div id="combatant-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
     <h3>Add NPC/Enemy</h3>
+
     <label>
       Name
       <input type="text" id="combatant-modal-name" maxlength="30">
     </label>
+
     <label>
       Initiative
       <input type="number" id="combatant-modal-initiative">
     </label>
-    <label>
+
+    <label class="hp-label">
       HP
-      <input type="number" id="combatant-modal-hp">
+      <span class="hp-group">
+        <input type="number" id="combatant-modal-hp">
+        <span>/</span>
+        <input type="number" id="combatant-modal-maxhp">
+      </span>
     </label>
+
     <label>
-      Max HP
-      <input type="number" id="combatant-modal-maxhp">
+      AC
+      <input type="number" id="combatant-modal-ac">
     </label>
+
     <div class="modal-actions">
       <button type="button" id="combatant-modal-cancel">Cancel</button>
       <button type="button" id="combatant-modal-save">Add</button>
@@ -397,12 +456,14 @@
             const initiativeInput = tile.querySelector('.initiative-input');
             const hpInput = tile.querySelector('.hp-input');
             const maxHpInput = tile.querySelector('.maxhp-input');
+            const acInput = tile.querySelector('.ac-input');
             const incapacitatedInput = tile.querySelector('.incapacitated-input');
 
             const payload = {
                 initiative: initiativeInput.value === '' ? null : Number(initiativeInput.value),
                 hp: hpInput ? (hpInput.value === '' ? null : Number(hpInput.value)) : null,
                 maxHp: maxHpInput ? (maxHpInput.value === '' ? null : Number(maxHpInput.value)) : null,
+                ac: acInput ? (acInput.value === '' ? null : Number(acInput.value)) : null,
                 incapacitated: incapacitatedInput.checked
             };
 
@@ -414,6 +475,28 @@
             highlightCurrentTurn();
             sortTilesByInitiative();
         });
+    }
+
+    const deleteBtn = tile.querySelector('.delete-combatant-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            if (!confirm('Remove this combatant from the encounter?')) return;
+
+            const combatantId = tile.dataset.combatantId;
+            await deleteCombatantRequest(combatantId);
+
+            const wasCurrentTurn = tile.dataset.combatantId === String(currentTurnId);
+            tile.remove();
+
+            if (wasCurrentTurn) {
+                currentTurnId = null;
+                highlightCurrentTurn();
+            }
+        });
+    }
+
+    async function deleteCombatantRequest(combatantId) {
+      return apiFetch(`/api/combatants/${combatantId}`, { method: 'DELETE' });
     }
 
     const addStatusBtn = tile.querySelector('.add-status-btn');
@@ -428,21 +511,26 @@ function buildCombatantTile(data) {
     const tile = document.createElement('div');
     tile.className = 'combatant-tile';
     tile.dataset.combatantId = data.id;
-    tile.dataset.incapacitated = data.incapacitated;
+    tile.dataset.dead = data.dead;
     tile.dataset.initiative = data.initiative === null ? '' : data.initiative;
 
     const hpBlock = data.player ? '' : `
         <div>
-            <label>HP
-                <input type="number" class="hp-input" value="${data.hp ?? ''}">
+            <label class="hp-label">HP
+                <span class="hp-slash-group">
+                    <input type="number" class="hp-input" value="${data.hp ?? ''}">
+                    <span>/</span>
+                    <input type="number" class="maxhp-input" value="${data.maxHp ?? ''}">
+                </span>
             </label>
-            <label>Max HP
-                <input type="number" class="maxhp-input" value="${data.maxHp ?? ''}">
+            <label>AC
+                <input type="number" class="ac-input" value="${data.ac ?? ''}">
             </label>
         </div>
     `;
 
     tile.innerHTML = `
+        <button type="button" class="delete-combatant-btn">&times;</button>
         <strong></strong>
         <span>${data.player ? ' (Player)' : ' (NPC)'}</span>
         <label>Initiative
@@ -450,7 +538,7 @@ function buildCombatantTile(data) {
         </label>
         ${hpBlock}
         <label>
-            <input type="checkbox" class="incapacitated-input" ${data.incapacitated ? 'checked' : ''}>
+            <input type="checkbox" class="dead-input" ${data.dead ? 'checked' : ''}>
             Incapacitated
         </label>
         <button type="button" class="update-btn">Update</button>
@@ -477,6 +565,7 @@ const combatantNameInput = document.getElementById('combatant-modal-name');
 const combatantInitiativeInput = document.getElementById('combatant-modal-initiative');
 const combatantHpInput = document.getElementById('combatant-modal-hp');
 const combatantMaxHpInput = document.getElementById('combatant-modal-maxhp');
+const combatantAcInput = document.getElementById('combatant-modal-ac');
 const combatantModalCancelBtn = document.getElementById('combatant-modal-cancel');
 const combatantModalSaveBtn = document.getElementById('combatant-modal-save');
 const addCombatantBtn = document.getElementById('add-combatant-btn');
@@ -486,6 +575,7 @@ function openCombatantModal() {
     combatantInitiativeInput.value = '';
     combatantHpInput.value = '';
     combatantMaxHpInput.value = '';
+    combatantAcInput.value = '';
     combatantModal.style.display = 'flex';
     combatantNameInput.focus();
 }
@@ -509,7 +599,8 @@ combatantModalSaveBtn.addEventListener('click', async () => {
         name: name,
         initiative: combatantInitiativeInput.value === '' ? null : Number(combatantInitiativeInput.value),
         hp: combatantHpInput.value === '' ? null : Number(combatantHpInput.value),
-        maxHp: combatantMaxHpInput.value === '' ? null : Number(combatantMaxHpInput.value)
+        maxHp: combatantMaxHpInput.value === '' ? null : Number(combatantMaxHpInput.value),
+        ac: combatantAcInput.value === '' ? null : Number(combatantAcInput.value)
     };
 
     const newCombatant = await createCombatant(encounterId, payload);
