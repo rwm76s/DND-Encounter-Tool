@@ -6,6 +6,7 @@ import itc475.dndencountertool.domain.User;
 import itc475.dndencountertool.mapper.CombatantRepository;
 import itc475.dndencountertool.mapper.EncounterRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,6 +34,7 @@ public class CombatantApiController {
         if (!combatant.isPlayer()) {
             combatant.setHp(request.hp());
             combatant.setMaxHp(request.maxHp());
+            combatant.setAc(request.ac());
         }
         combatant.setIncapacitated(request.incapacitated());
 
@@ -43,22 +45,9 @@ public class CombatantApiController {
                 combatant.getInitiative(),
                 combatant.getHp(),
                 combatant.getMaxHp(),
+                combatant.getAc(),
                 combatant.isIncapacitated()
         );
-    }
-
-    record CombatantUpdateRequest(Integer initiative, Integer hp, Integer maxHp, boolean incapacitated) {}
-    record CombatantResponse(Long id, Integer initiative, Integer hp, Integer maxHp, boolean incapacitated) {}
-
-    private Combatant getOwnedCombatantOrThrow(Long combatantId, User user) {
-        Combatant combatant = combatantRepository.findById(combatantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (!combatant.getEncounter().getCampaign().getUser().getId().equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        return combatant;
     }
 
     @PostMapping("/encounters/{encounterId}/combatants")
@@ -71,6 +60,7 @@ public class CombatantApiController {
         combatant.setInitiative(request.initiative());
         combatant.setHp(request.hp());
         combatant.setMaxHp(request.maxHp());
+        combatant.setAc(request.ac());
 
         combatantRepository.save(combatant);
 
@@ -81,12 +71,33 @@ public class CombatantApiController {
                 combatant.getInitiative(),
                 combatant.getHp(),
                 combatant.getMaxHp(),
+                combatant.getAc(),
                 combatant.isIncapacitated()
         );
     }
 
-    record NewCombatantRequest(String name, Integer initiative, Integer hp, Integer maxHp) {}
-    record CombatantFullResponse(Long id, String name, boolean player, Integer initiative, Integer hp, Integer maxHp, boolean incapacitated) {}
+    @DeleteMapping("/combatants/{combatantId}")
+    public ResponseEntity<Void> deleteCombatant(@PathVariable Long combatantId, @AuthenticationPrincipal User user) {
+        Combatant combatant = getOwnedCombatantOrThrow(combatantId, user);
+        combatantRepository.delete(combatant);
+        return ResponseEntity.noContent().build();
+    }
+
+    record CombatantUpdateRequest(Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
+    record CombatantResponse(Long id, Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
+    record NewCombatantRequest(String name, Integer initiative, Integer hp, Integer maxHp, Integer ac) {}
+    record CombatantFullResponse(Long id, String name, boolean player, Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
+
+    private Combatant getOwnedCombatantOrThrow(Long combatantId, User user) {
+        Combatant combatant = combatantRepository.findById(combatantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!combatant.getEncounter().getCampaign().getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return combatant;
+    }
 
     private Encounter getOwnedEncounterOrThrow(Long encounterId, User user) {
         Encounter encounter = encounterRepository.findById(encounterId)

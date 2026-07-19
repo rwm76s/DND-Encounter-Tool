@@ -29,6 +29,8 @@ public class Combatant {
     @Column(nullable = false)
     private boolean incapacitated = false;
 
+    private Integer ac;
+
     private boolean player;
 
     @ManyToOne
@@ -118,5 +120,13 @@ public class Combatant {
 
     public void setStatuses(List<Status> statuses) {
         this.statuses = statuses;
+    }
+
+    public Integer getAc() {
+        return ac;
+    }
+
+    public void setAc(Integer ac) {
+        this.ac = ac;
     }
 }
