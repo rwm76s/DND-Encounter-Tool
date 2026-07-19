@@ -60,7 +60,7 @@ public class CampaignController {
 
         model.addAttribute("campaign", campaign);
         model.addAttribute("partyMembers", partyMemberRepository.findByCampaignId(id));
-        model.addAttribute("encounters", encounterRepository.findByCampaignId(id));
+        model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByCompleteAscNameAsc(id));
 
         return "campaign-details";
     }

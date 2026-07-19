@@ -3,6 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${campaign.name}">Campaign</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-box label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.9em;
+        }
+        .modal-actions {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .danger-btn {
+            background-color: #c0392b;
+            color: white;
+        }
+    </style>
+    <script>
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        async function apiFetch(url, options = {}) {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken,
+                    ...(options.headers || {})
+                };
+
+                const response = await fetch(url, { ...options, headers });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Request failed (${response.status}): ${text}`);
+                }
+
+                if (response.status === 204) return null;
+                return await response.json();
+            } catch (err) {
+                console.error('apiFetch error:', err);
+                alert('Something went wrong: ' + err.message);
+                throw err;
+            }
+        }
+    </script>
 </head>
 <body>
 <p><a th:href="@{/campaigns}">&larr; Back to Campaigns</a></p>
@@ -10,31 +79,227 @@
 <h1 th:text="${campaign.name}"></h1>
 <p th:if="${campaign.complete}">Status: Completed</p>
 <p th:unless="${campaign.complete}">Status: Active</p>
+
 <form th:action="@{/campaigns/{id}/toggle-complete(id=${campaign.id})}" method="post">
     <button type="submit" th:text="${campaign.complete} ? 'Mark as Active' : 'Mark as Complete'"></button>
 </form>
 
+<button type="button" class="danger-btn" id="delete-campaign-btn">Delete Campaign</button>
+
 <h2>Party Members</h2>
-<ul>
-    <li th:each="member : ${partyMembers}">
-        <span th:text="${member.name}"></span>
-        <span th:if="${!member.active}"> (inactive)</span>
+<ul id="party-member-list">
+    <li th:each="member : ${partyMembers}" th:data-member-id="${member.id}">
+        <span class="member-name" th:text="${member.name}"></span>
+        <span class="member-inactive-tag" th:if="${!member.active}"> (inactive)</span>
         <form th:action="@{/party-members/{id}/toggle-active(id=${member.id})}" method="post" style="display:inline;">
             <button type="submit" th:text="${member.active} ? 'Set Inactive' : 'Set Active'"></button>
         </form>
+        <button type="button" class="delete-member-btn">Delete</button>
     </li>
-    <li th:if="${partyMembers.isEmpty()}">No party members yet.</li>
 </ul>
-<a th:href="@{/campaigns/{id}/party-members/new(id=${campaign.id})}">+ Add Party Member</a>
+<button type="button" id="add-member-btn">+ Add Party Member</button>
 
 <h2>Encounters</h2>
-<ul>
-    <li th:each="encounter : ${encounters}">
+<ul id="encounter-list">
+    <li th:each="encounter : ${encounters}" th:data-encounter-id="${encounter.id}">
         <a th:href="@{/encounters/{id}(id=${encounter.id})}" th:text="${encounter.name}"></a>
         <span th:if="${encounter.complete}"> (completed)</span>
+        <button type="button" class="delete-encounter-btn">Delete</button>
     </li>
-    <li th:if="${encounters.isEmpty()}">No encounters yet.</li>
 </ul>
-<a th:href="@{/campaigns/{id}/encounters/new(id=${campaign.id})}">+ Add Encounter</a>
+<button type="button" id="add-encounter-btn">+ Add Encounter</button>
+
+<!-- Add Party Member Modal -->
+<div id="member-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <h3>Add Party Member</h3>
+        <label>
+            Character Name
+            <input type="text" id="member-modal-name" maxlength="30">
+        </label>
+        <div class="modal-actions">
+            <button type="button" id="member-modal-cancel">Cancel</button>
+            <button type="button" id="member-modal-save">Add</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Encounter Modal -->
+<div id="encounter-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <h3>Add Encounter</h3>
+        <label>
+            Encounter Name
+            <input type="text" id="encounter-modal-name" maxlength="50">
+        </label>
+        <div class="modal-actions">
+            <button type="button" id="encounter-modal-cancel">Cancel</button>
+            <button type="button" id="encounter-modal-save">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Campaign Modal -->
+<div id="delete-campaign-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <h3>Delete Campaign</h3>
+        <p>This will permanently delete <strong th:text="${campaign.name}"></strong>,
+            along with every encounter, party member, and combatant in it.</p>
+        <p>Type the campaign name to confirm:</p>
+        <input type="text" id="delete-campaign-input" autocomplete="off">
+        <div class="modal-actions">
+            <button type="button" id="delete-campaign-cancel">Cancel</button>
+            <button type="button" id="delete-campaign-confirm" class="danger-btn" disabled>Delete Forever</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const campaignId = /*[[${campaign.id}]]*/ 0;
+    const campaignName = /*[[${campaign.name}]]*/ '';
+
+    // ---- Party Members ----
+
+    async function createPartyMember(name) {
+        return apiFetch(`/api/campaigns/${campaignId}/party-members`, {
+            method: 'POST',
+            body: JSON.stringify({ name })
+        });
+    }
+
+    async function deletePartyMemberRequest(id) {
+        return apiFetch(`/api/party-members/${id}`, { method: 'DELETE' });
+    }
+
+    const memberModal = document.getElementById('member-modal');
+    const memberNameInput = document.getElementById('member-modal-name');
+    const memberModalCancelBtn = document.getElementById('member-modal-cancel');
+    const memberModalSaveBtn = document.getElementById('member-modal-save');
+
+    document.getElementById('add-member-btn').addEventListener('click', () => {
+        memberNameInput.value = '';
+        memberModal.style.display = 'flex';
+        memberNameInput.focus();
+    });
+
+    memberModalCancelBtn.addEventListener('click', () => memberModal.style.display = 'none');
+    memberModal.addEventListener('click', (e) => {
+        if (e.target === memberModal) memberModal.style.display = 'none';
+    });
+
+    memberModalSaveBtn.addEventListener('click', async () => {
+        const name = memberNameInput.value.trim();
+        if (!name) return;
+
+        const newMember = await createPartyMember(name);
+
+        const li = document.createElement('li');
+        li.dataset.memberId = newMember.id;
+        li.innerHTML = `
+            <span class="member-name"></span>
+            <form method="post" style="display:inline;">
+                <button type="submit">Set Inactive</button>
+            </form>
+            <button type="button" class="delete-member-btn">Delete</button>
+        `;
+        li.querySelector('.member-name').textContent = newMember.name;
+        li.querySelector('form').action = `/party-members/${newMember.id}/toggle-active`;
+        attachMemberDeleteHandler(li.querySelector('.delete-member-btn'));
+
+        document.getElementById('party-member-list').appendChild(li);
+        memberModal.style.display = 'none';
+    });
+
+    function attachMemberDeleteHandler(button) {
+        button.addEventListener('click', async () => {
+            const li = button.closest('li');
+            const id = li.dataset.memberId;
+
+            await deletePartyMemberRequest(id);
+            li.remove();
+        });
+    }
+
+    document.querySelectorAll('.delete-member-btn').forEach(attachMemberDeleteHandler);
+
+    // ---- Encounters ----
+
+    async function createEncounterRequest(name) {
+        return apiFetch(`/api/campaigns/${campaignId}/encounters`, {
+            method: 'POST',
+            body: JSON.stringify({ name })
+        });
+    }
+
+    async function deleteEncounterRequest(id) {
+        return apiFetch(`/api/encounters/${id}`, { method: 'DELETE' });
+    }
+
+    const encounterModal = document.getElementById('encounter-modal');
+    const encounterNameInput = document.getElementById('encounter-modal-name');
+    const encounterModalCancelBtn = document.getElementById('encounter-modal-cancel');
+    const encounterModalSaveBtn = document.getElementById('encounter-modal-save');
+
+    document.getElementById('add-encounter-btn').addEventListener('click', () => {
+        encounterNameInput.value = '';
+        encounterModal.style.display = 'flex';
+        encounterNameInput.focus();
+    });
+
+    encounterModalCancelBtn.addEventListener('click', () => encounterModal.style.display = 'none');
+    encounterModal.addEventListener('click', (e) => {
+        if (e.target === encounterModal) encounterModal.style.display = 'none';
+    });
+
+    encounterModalSaveBtn.addEventListener('click', async () => {
+        const name = encounterNameInput.value.trim();
+        if (!name) return;
+
+        const newEncounter = await createEncounterRequest(name);
+        window.location.href = `/encounters/${newEncounter.id}`;
+    });
+
+    function attachEncounterDeleteHandler(button) {
+        button.addEventListener('click', async () => {
+            if (!confirm('Delete this encounter and all its combatants?')) return;
+
+            const li = button.closest('li');
+            const id = li.dataset.encounterId;
+
+            await deleteEncounterRequest(id);
+            li.remove();
+        });
+    }
+
+    document.querySelectorAll('.delete-encounter-btn').forEach(attachEncounterDeleteHandler);
+
+    // ---- Delete Campaign ----
+
+    const deleteCampaignModal = document.getElementById('delete-campaign-modal');
+    const deleteCampaignInput = document.getElementById('delete-campaign-input');
+    const deleteCampaignCancelBtn = document.getElementById('delete-campaign-cancel');
+    const deleteCampaignConfirmBtn = document.getElementById('delete-campaign-confirm');
+
+    document.getElementById('delete-campaign-btn').addEventListener('click', () => {
+        deleteCampaignInput.value = '';
+        deleteCampaignConfirmBtn.disabled = true;
+        deleteCampaignModal.style.display = 'flex';
+        deleteCampaignInput.focus();
+    });
+
+    deleteCampaignCancelBtn.addEventListener('click', () => deleteCampaignModal.style.display = 'none');
+    deleteCampaignModal.addEventListener('click', (e) => {
+        if (e.target === deleteCampaignModal) deleteCampaignModal.style.display = 'none';
+    });
+
+    deleteCampaignInput.addEventListener('input', () => {
+        deleteCampaignConfirmBtn.disabled = deleteCampaignInput.value !== campaignName;
+    });
+
+    deleteCampaignConfirmBtn.addEventListener('click', async () => {
+        await apiFetch(`/api/campaigns/${campaignId}`, { method: 'DELETE' });
+        window.location.href = '/campaigns';
+    });
+</script>
 </body>
 </html>
