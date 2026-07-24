@@ -22,6 +22,7 @@ public class Campaign {
     @Column(nullable = false)
     private boolean complete = false;
 
+    // Acts as a foreign key
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -42,6 +43,8 @@ public class Campaign {
         this.name = name;
         this.user = user;
     }
+
+    // Getters and setters
 
     public Long getId() {
         return id;

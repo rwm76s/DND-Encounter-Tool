@@ -31,8 +31,11 @@ public class Combatant {
 
     private Integer ac;
 
+    private String notes;
+
     private boolean player;
 
+    // Acts as a foreign key
     @ManyToOne
     @JoinColumn(name = "encounter_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -50,6 +53,7 @@ public class Combatant {
         this.encounter = encounter;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -128,5 +132,13 @@ public class Combatant {
 
     public void setAc(Integer ac) {
         this.ac = ac;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

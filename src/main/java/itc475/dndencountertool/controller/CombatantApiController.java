@@ -83,6 +83,27 @@ public class CombatantApiController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/combatants/{combatantId}/notes")
+    public NoteResponse updateNote(@PathVariable Long combatantId,
+                                   @AuthenticationPrincipal User user,
+                                   @RequestBody NoteRequest request) {
+        Combatant combatant = getOwnedCombatantOrThrow(combatantId, user);
+        combatant.setNotes(request.notes());
+        combatantRepository.save(combatant);
+        return new NoteResponse(combatant.getId(), combatant.getNotes());
+    }
+
+    @DeleteMapping("/combatants/{combatantId}/notes")
+    public ResponseEntity<Void> deleteNote(@PathVariable Long combatantId, @AuthenticationPrincipal User user) {
+        Combatant combatant = getOwnedCombatantOrThrow(combatantId, user);
+        combatant.setNotes(null);
+        combatantRepository.save(combatant);
+        return ResponseEntity.noContent().build();
+    }
+
+    record NoteRequest(String notes) {}
+    record NoteResponse(Long id, String notes) {}
+
     record CombatantUpdateRequest(Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
     record CombatantResponse(Long id, Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
     record NewCombatantRequest(String name, Integer initiative, Integer hp, Integer maxHp, Integer ac) {}

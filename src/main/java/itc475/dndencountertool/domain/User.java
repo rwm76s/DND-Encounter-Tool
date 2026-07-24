@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
+// Mapping SQL table columns to class attributes
 @Entity
 @Table(name = "users")
 public class User implements UserDetails {
@@ -30,7 +31,7 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    // Domain getters/setters
+    // Getters and setters
 
     public Long getId() {
         return id;

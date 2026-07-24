@@ -19,6 +19,7 @@ public class PartyMember {
     @Column(nullable = false)
     private boolean active = true;
 
+    // Acts as a foreign key
     @ManyToOne
     @JoinColumn(name = "campaign_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -32,6 +33,7 @@ public class PartyMember {
         this.campaign = campaign;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
