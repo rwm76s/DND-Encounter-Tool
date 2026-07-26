@@ -307,9 +307,25 @@
     </div>
   </div>
 </div>
+
 <div id="combatant-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
     <h3>Add NPC/Enemy</h3>
+
+    <label>
+      Use Template
+      <select id="combatant-modal-template">
+        <option value="">-- Custom --</option>
+        <option th:each="t : ${monsterTemplates}"
+                th:value="${t.id}"
+                th:text="${t.name}"
+                th:data-hp="${t.hp}"
+                th:data-maxhp="${t.maxHp}"
+                th:data-ac="${t.ac}"
+                th:data-name="${t.name}">
+        </option>
+      </select>
+    </label>
 
     <label>
       Name
@@ -323,11 +339,11 @@
 
     <label class="hp-label">
       HP
-      <span class="hp-group">
-        <input type="number" id="combatant-modal-hp">
-        <span>/</span>
-        <input type="number" id="combatant-modal-maxhp">
-      </span>
+      <span class="hp-slash-group">
+                <input type="number" id="combatant-modal-hp">
+                <span>/</span>
+                <input type="number" id="combatant-modal-maxhp">
+            </span>
     </label>
 
     <label>
@@ -581,7 +597,7 @@ function buildCombatantTile(data) {
     const tile = document.createElement('div');
     tile.className = 'combatant-tile';
     tile.dataset.combatantId = data.id;
-    tile.dataset.dead = data.dead;
+    tile.dataset.incapacitated = data.incapacitated;
     tile.dataset.initiative = data.initiative === null ? '' : data.initiative;
 
     const hpBlock = data.player ? '' : `
@@ -608,7 +624,7 @@ function buildCombatantTile(data) {
         </label>
         ${hpBlock}
         <label>
-            <input type="checkbox" class="dead-input" ${data.dead ? 'checked' : ''}>
+            <input type="checkbox" class="incapacitated-input" ${data.incapacitated ? 'checked' : ''}>
             Incapacitated
         </label>
         <button type="button" class="update-btn">Update</button>
@@ -647,6 +663,7 @@ function openCombatantModal() {
     combatantHpInput.value = '';
     combatantMaxHpInput.value = '';
     combatantAcInput.value = '';
+    combatantTemplateSelect.value = '';
     combatantModal.style.display = 'flex';
     combatantNameInput.focus();
 }
@@ -768,6 +785,46 @@ function renderNoteEditor(section, tile, currentText) {
     section.appendChild(wrapper);
     textarea.focus();
 }
+
+
+
+const combatantTemplateSelect = document.getElementById('combatant-modal-template');
+
+function countExistingWithBaseName(baseName) {
+    const tiles = getTiles();
+    let count = 0;
+    for (const tile of tiles) {
+        const tileName = tile.querySelector('strong').textContent;
+        if (tileName === baseName || tileName.match(new RegExp(`^${escapeRegex(baseName)} \\d+$`))) {
+            count++;
+        }
+    }
+    return count;
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+combatantTemplateSelect.addEventListener('change', () => {
+    const selected = combatantTemplateSelect.selectedOptions[0];
+
+    if (!selected.value) {
+        combatantNameInput.value = '';
+        combatantHpInput.value = '';
+        combatantMaxHpInput.value = '';
+        combatantAcInput.value = '';
+        return;
+    }
+
+    const baseName = selected.dataset.name;
+    const existingCount = countExistingWithBaseName(baseName);
+
+    combatantNameInput.value = `${baseName} ${existingCount + 1}`;
+    combatantHpInput.value = selected.dataset.hp || '';
+    combatantMaxHpInput.value = selected.dataset.maxhp || '';
+    combatantAcInput.value = selected.dataset.ac || '';
+});
 
   getTiles().forEach(tile => initTile(tile))
   highlightCurrentTurn();

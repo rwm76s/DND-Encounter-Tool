@@ -5,6 +5,7 @@ import itc475.dndencountertool.mapper.CampaignRepository;
 import itc475.dndencountertool.mapper.CombatantRepository;
 import itc475.dndencountertool.mapper.EncounterRepository;
 import itc475.dndencountertool.mapper.StatusRepository;
+import itc475.dndencountertool.mapper.MonsterTemplateRepository;
 import itc475.dndencountertool.service.EncounterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,17 +21,20 @@ public class EncounterController {
     private final CampaignRepository campaignRepository;
     private final CombatantRepository combatantRepository;
     private final StatusRepository statusRepository;
+    private final MonsterTemplateRepository monsterTemplateRepository;
     private final EncounterService encounterService;
 
     public EncounterController(EncounterRepository encounterRepository,
                                CampaignRepository campaignRepository,
                                CombatantRepository combatantRepository,
                                StatusRepository statusRepository,
+                               MonsterTemplateRepository monsterTemplateRepository,
                                EncounterService encounterService) {
         this.encounterRepository = encounterRepository;
         this.campaignRepository = campaignRepository;
         this.combatantRepository = combatantRepository;
         this.statusRepository = statusRepository;
+        this.monsterTemplateRepository = monsterTemplateRepository;
         this.encounterService = encounterService;
     }
 
@@ -65,6 +69,7 @@ public class EncounterController {
 
         model.addAttribute("encounter", encounter);
         model.addAttribute("combatants", combatantRepository.findByEncounterIdOrderByInitiativeDesc(id));
+        model.addAttribute("monsterTemplates", monsterTemplateRepository.findByCampaignIdOrderByNameAsc(encounter.getCampaign().getId()));
         return "encounter-details";
     }
 
