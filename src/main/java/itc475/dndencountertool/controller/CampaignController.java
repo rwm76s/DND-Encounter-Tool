@@ -5,6 +5,7 @@ import itc475.dndencountertool.domain.User;
 import itc475.dndencountertool.mapper.CampaignRepository;
 import itc475.dndencountertool.mapper.PartyMemberRepository;
 import itc475.dndencountertool.mapper.EncounterRepository;
+import itc475.dndencountertool.mapper.MonsterTemplateRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -21,13 +22,16 @@ public class CampaignController {
     private final CampaignRepository campaignRepository;
     private final PartyMemberRepository partyMemberRepository;
     private final EncounterRepository encounterRepository;
+    private final MonsterTemplateRepository monsterTemplateRepository;
 
     public CampaignController(CampaignRepository campaignRepository,
                               PartyMemberRepository partyMemberRepository,
-                              EncounterRepository encounterRepository) {
+                              EncounterRepository encounterRepository,
+                              MonsterTemplateRepository monsterTemplateRepository) {
         this.campaignRepository = campaignRepository;
         this.partyMemberRepository = partyMemberRepository;
         this.encounterRepository = encounterRepository;
+        this.monsterTemplateRepository = monsterTemplateRepository;
     }
 
     @GetMapping("/campaigns")
@@ -61,6 +65,7 @@ public class CampaignController {
         model.addAttribute("campaign", campaign);
         model.addAttribute("partyMembers", partyMemberRepository.findByCampaignId(id));
         model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByCompleteAscNameAsc(id));
+        model.addAttribute("monsterTemplates", monsterTemplateRepository.findByCampaignIdOrderByNameAsc(id));
 
         return "campaign-details";
     }

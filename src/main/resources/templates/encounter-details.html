@@ -136,6 +136,69 @@
     .hp-group input {
         width: 45px;
     }
+
+    .add-note-btn {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1.1em;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.note-block {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #ccc;
+}
+
+.note-header {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.note-header button {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.note-text {
+    white-space: pre-wrap;
+    margin: 0;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.note-block.minimized .note-text {
+    display: none;
+}
+
+.note-editor-wrapper {
+    margin-top: 8px;
+}
+
+.note-editor {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.note-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 4px;
+}
   </style>
   <script>
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
@@ -227,6 +290,8 @@
       </ul>
     </div>
 
+    <div class="note-section" th:attr="data-notes=${c.notes} ?: ''"></div>
+
     <button type="button" class="add-status-btn">+</button>
   </div>
 
@@ -242,9 +307,25 @@
     </div>
   </div>
 </div>
+
 <div id="combatant-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
     <h3>Add NPC/Enemy</h3>
+
+    <label>
+      Use Template
+      <select id="combatant-modal-template">
+        <option value="">-- Custom --</option>
+        <option th:each="t : ${monsterTemplates}"
+                th:value="${t.id}"
+                th:text="${t.name}"
+                th:data-hp="${t.hp}"
+                th:data-maxhp="${t.maxHp}"
+                th:data-ac="${t.ac}"
+                th:data-name="${t.name}">
+        </option>
+      </select>
+    </label>
 
     <label>
       Name
@@ -258,11 +339,11 @@
 
     <label class="hp-label">
       HP
-      <span class="hp-group">
-        <input type="number" id="combatant-modal-hp">
-        <span>/</span>
-        <input type="number" id="combatant-modal-maxhp">
-      </span>
+      <span class="hp-slash-group">
+                <input type="number" id="combatant-modal-hp">
+                <span>/</span>
+                <input type="number" id="combatant-modal-maxhp">
+            </span>
     </label>
 
     <label>
@@ -477,6 +558,11 @@
         });
     }
 
+    const noteSection = tile.querySelector('.note-section');
+       if (noteSection) {
+           renderNoteDisplay(noteSection, tile, noteSection.dataset.notes || null);
+       }
+
     const deleteBtn = tile.querySelector('.delete-combatant-btn');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
@@ -511,7 +597,7 @@ function buildCombatantTile(data) {
     const tile = document.createElement('div');
     tile.className = 'combatant-tile';
     tile.dataset.combatantId = data.id;
-    tile.dataset.dead = data.dead;
+    tile.dataset.incapacitated = data.incapacitated;
     tile.dataset.initiative = data.initiative === null ? '' : data.initiative;
 
     const hpBlock = data.player ? '' : `
@@ -538,13 +624,14 @@ function buildCombatantTile(data) {
         </label>
         ${hpBlock}
         <label>
-            <input type="checkbox" class="dead-input" ${data.dead ? 'checked' : ''}>
+            <input type="checkbox" class="incapacitated-input" ${data.incapacitated ? 'checked' : ''}>
             Incapacitated
         </label>
         <button type="button" class="update-btn">Update</button>
         <div class="statuses">
             <ul class="status-list"></ul>
         </div>
+        <div class="note-section"></div>
         <button type="button" class="add-status-btn">+</button>
     `;
 
@@ -576,6 +663,7 @@ function openCombatantModal() {
     combatantHpInput.value = '';
     combatantMaxHpInput.value = '';
     combatantAcInput.value = '';
+    combatantTemplateSelect.value = '';
     combatantModal.style.display = 'flex';
     combatantNameInput.focus();
 }
@@ -611,6 +699,131 @@ combatantModalSaveBtn.addEventListener('click', async () => {
     sortTilesByInitiative();
 
     closeCombatantModal();
+});
+
+async function saveNoteRequest(combatantId, notes) {
+    return apiFetch(`/api/combatants/${combatantId}/notes`, {
+        method: 'PUT',
+        body: JSON.stringify({ notes })
+    });
+}
+
+async function deleteNoteRequest(combatantId) {
+    return apiFetch(`/api/combatants/${combatantId}/notes`, { method: 'DELETE' });
+}
+
+function renderNoteDisplay(section, tile, notesText) {
+    section.innerHTML = '';
+
+    if (!notesText) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'add-note-btn';
+        btn.title = 'Add Note';
+        btn.textContent = '+';
+        btn.addEventListener('click', () => renderNoteEditor(section, tile, ''));
+        section.appendChild(btn);
+        return;
+    }
+
+    const block = document.createElement('div');
+    block.className = 'note-block';
+    block.innerHTML = `
+        <div class="note-header">
+            <button type="button" class="note-minimize-btn" title="Minimize">&#8722;</button>
+            <button type="button" class="note-delete-btn" title="Delete note">&times;</button>
+        </div>
+        <p class="note-text"></p>
+    `;
+    block.querySelector('.note-text').textContent = notesText;
+
+    block.querySelector('.note-minimize-btn').addEventListener('click', (e) => {
+        block.classList.toggle('minimized');
+        e.target.innerHTML = block.classList.contains('minimized') ? '&#43;' : '&#8722;';
+    });
+
+    block.querySelector('.note-delete-btn').addEventListener('click', async () => {
+        await deleteNoteRequest(tile.dataset.combatantId);
+        renderNoteDisplay(section, tile, null);
+    });
+
+    block.querySelector('.note-text').addEventListener('click', () => {
+        renderNoteEditor(section, tile, notesText);
+    });
+
+    section.appendChild(block);
+}
+
+function renderNoteEditor(section, tile, currentText) {
+    section.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'note-editor-wrapper';
+    wrapper.innerHTML = `
+        <textarea class="note-editor" maxlength="1000"></textarea>
+        <div class="note-editor-actions">
+            <button type="button" class="note-cancel-btn">Cancel</button>
+            <button type="button" class="note-save-btn">Save</button>
+        </div>
+    `;
+
+    const textarea = wrapper.querySelector('.note-editor');
+    textarea.value = currentText || '';
+
+    wrapper.querySelector('.note-cancel-btn').addEventListener('click', () => {
+        renderNoteDisplay(section, tile, currentText || null);
+    });
+
+    wrapper.querySelector('.note-save-btn').addEventListener('click', async () => {
+        const newText = textarea.value.trim();
+        if (!newText) return;
+
+        const updated = await saveNoteRequest(tile.dataset.combatantId, newText);
+        renderNoteDisplay(section, tile, updated.notes);
+    });
+
+    section.appendChild(wrapper);
+    textarea.focus();
+}
+
+
+
+const combatantTemplateSelect = document.getElementById('combatant-modal-template');
+
+function countExistingWithBaseName(baseName) {
+    const tiles = getTiles();
+    let count = 0;
+    for (const tile of tiles) {
+        const tileName = tile.querySelector('strong').textContent;
+        if (tileName === baseName || tileName.match(new RegExp(`^${escapeRegex(baseName)} \\d+$`))) {
+            count++;
+        }
+    }
+    return count;
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+combatantTemplateSelect.addEventListener('change', () => {
+    const selected = combatantTemplateSelect.selectedOptions[0];
+
+    if (!selected.value) {
+        combatantNameInput.value = '';
+        combatantHpInput.value = '';
+        combatantMaxHpInput.value = '';
+        combatantAcInput.value = '';
+        return;
+    }
+
+    const baseName = selected.dataset.name;
+    const existingCount = countExistingWithBaseName(baseName);
+
+    combatantNameInput.value = `${baseName} ${existingCount + 1}`;
+    combatantHpInput.value = selected.dataset.hp || '';
+    combatantMaxHpInput.value = selected.dataset.maxhp || '';
+    combatantAcInput.value = selected.dataset.ac || '';
 });
 
   getTiles().forEach(tile => initTile(tile))

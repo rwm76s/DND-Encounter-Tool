@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+// Mapping SQL table columns to class attributes
 @Entity
 @Table(name = "statuses")
 public class Status {
@@ -15,6 +16,7 @@ public class Status {
     @Column(length = 25)
     private String status;
 
+    // Acts as a foreign key
     @ManyToOne
     @JoinColumn(name = "combatant_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -28,6 +30,7 @@ public class Status {
         this.combatant = combatant;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }

@@ -32,6 +32,7 @@ public class Encounter {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private Combatant currentTurn;
 
+    // Acts as a foreign key
     @OneToMany(mappedBy = "encounter")
     private List<Combatant> combatants = new ArrayList<>();
 
@@ -43,6 +44,7 @@ public class Encounter {
         this.campaign = campaign;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
