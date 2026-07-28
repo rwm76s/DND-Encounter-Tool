@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>DND Encounter Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/theme.css}">
+  <style>
+    .splash {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: var(--space-md);
+    }
+    .splash .label-tag { margin-bottom: var(--space-xs); }
+    .splash h1 {
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        max-width: 20ch;
+    }
+    .splash .tagline {
+        font-size: 1.125rem;
+        color: var(--color-ink);
+        opacity: 0.75;
+        max-width: 40ch;
+        margin: var(--space-sm) 0 var(--space-md);
+    }
+    .splash .actions {
+        display: flex;
+        gap: var(--space-sm);
+    }
+    .splash hr.rule {
+        border: none;
+        border-top: 1px solid var(--color-gold);
+        width: 80px;
+        margin: var(--space-sm) 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="splash">
+    <span class="label-tag">Campaign Companion</span>
+    <h1>Dungeons & Dragons Encounter Tool</h1>
+    <hr class="rule">
+    <p class="tagline">Track initiative, hit points, status effects and more at the table</p>
+    <div class="actions">
+      <a th:href="@{/login}" class="btn btn-primary">Log In</a>
+      <a th:href="@{/register}" class="btn btn-secondary">Register</a>
+    </div>
+  </main>
+</body>
+</html>

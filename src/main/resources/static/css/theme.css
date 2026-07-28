@@ -1,0 +1,169 @@
+/* ===== Design Tokens ===== */
+:root {
+  /* Colors */
+  --color-ink: #1C1B1A;        /* primary text, borders */
+  --color-parchment: #F7F4EC;  /* page background */
+  --color-parchment-dim: #EDE8DA; /* card background, slightly deeper */
+  --color-blood: #8B1E1E;      /* primary accent / CTA */
+  --color-blood-dark: #6E1717; /* hover state */
+  --color-forest: #3D6B4C;     /* secondary accent */
+  --color-gold: #C9A227;       /* rules, dividers, borders */
+
+  /* Type */
+  --font-display: 'Spectral', Georgia, serif;
+  --font-body: 'Source Sans 3', -apple-system, sans-serif;
+  --font-label: 'Source Sans 3', monospace;
+
+  /* Spacing scale */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 4rem;
+}
+
+/* ===== Reset / Base ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--color-parchment);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: var(--color-blood);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* Reusable stat-block card */
+.stat-card {
+  background: var(--color-parchment-dim);
+  border: 1px solid var(--color-ink);
+  border-top: 4px double var(--color-gold);
+  border-radius: 2px;
+  padding: var(--space-md);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.75rem 1.75rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-blood);
+  border-color: var(--color-blood);
+  color: var(--color-parchment);
+}
+.btn-primary:hover { background-color: var(--color-blood-dark); text-decoration: none; }
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-ink);
+}
+.btn-secondary:hover { background-color: var(--color-ink); color: var(--color-parchment); text-decoration: none; }
+
+/* Small-caps utility label (for INIT / HP / AC style tags) */
+.label-tag {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: var(--color-forest);
+}
+
+/* ===== Auth page layout (shared by login.html + register.html) ===== */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* centers card vertically+horizontally regardless of viewport size */
+    padding: var(--space-md);
+}
+.auth-page h1 {
+    font-size: 1.5rem;
+    margin-bottom: var(--space-md);
+    text-align: center;
+}
+.auth-card {
+    width: 100%;
+    max-width: 380px; /* caps card width so it doesn't stretch full-bleed on wide screens */
+}
+.auth-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: var(--space-sm);
+}
+.auth-message {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 2px;
+    margin-bottom: var(--space-sm);
+}
+.auth-message.error {
+    /* replaces old inline style="color: red" with a themed, bordered variant */
+    color: var(--color-blood-dark);
+    background-color: rgba(139, 30, 30, 0.08);
+    border: 1px solid rgba(139, 30, 30, 0.3);
+}
+.auth-message.success {
+    color: var(--color-forest);
+    background-color: rgba(61, 107, 76, 0.08);
+    border: 1px solid rgba(61, 107, 76, 0.3);
+}
+.field-group {
+    margin-bottom: var(--space-sm); /* one wrapper per label+input keeps spacing consistent */
+}
+.field-group label {
+    display: block;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    color: var(--color-ink);
+    opacity: 0.7;
+    margin-bottom: 0.35rem;
+}
+.field-group input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-ink);
+    border-radius: 2px;
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+}
+.field-group input:focus {
+    /* replaces default blue browser focus ring w/ theme color; keeps focus visible for a11y */
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+.auth-card .btn {
+    width: 100%;
+    margin-top: var(--space-xs);
+}
+.auth-footer {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: var(--space-sm);
+}
