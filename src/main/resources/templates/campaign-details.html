@@ -5,6 +5,7 @@
     <title th:text="${campaign.name}">Campaign</title>
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
     <style>
         .modal-overlay {
             position: fixed;
@@ -74,7 +75,8 @@
     </script>
 </head>
 <body>
-<p><a th:href="@{/campaigns}">&larr; Back to Campaigns</a></p>
+<!-- Nav fragment creates navigation bar -->
+<div th:replace="~{fragments/nav :: nav}"></div>
 
 <h1 th:text="${campaign.name}"></h1>
 <p th:if="${campaign.complete}">Status: Completed</p>

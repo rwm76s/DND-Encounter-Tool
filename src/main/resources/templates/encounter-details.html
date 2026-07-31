@@ -5,6 +5,7 @@
   <title th:text="${encounter.name}">Encounter</title>
   <meta name="_csrf" th:content="${_csrf.token}">
   <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <link rel="stylesheet" th:href="@{/css/theme.css}">
   <style>
     .combatant-grid {
         display: flex;
@@ -230,6 +231,8 @@
   </script>
 </head>
 <body>
+<!-- Nav fragment creates navigation bar -->
+<div th:replace="~{fragments/nav :: nav}"></div>
 <p><a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}">&larr; Back to Campaign</a></p>
 
 <h1 th:text="${encounter.name}"></h1>
