@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>My Campaigns</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/theme.css}">
@@ -67,8 +69,97 @@
             color: var(--color-gold);
             border-style: dashed;
             background: transparent;
+            cursor: pointer;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(28, 27, 26, 0.55); /* --color-ink at low opacity, instead of flat black, keeps it on-theme */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            /* same border language as .stat-card / .campaign-tile, so the modal reads as part of the same system */
+            background: var(--color-parchment);
+            border: 1px solid var(--color-ink);
+            border-top: 4px double var(--color-gold);
+            border-radius: 2px;
+            padding: var(--space-md);
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        .modal-box h3 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+        }
+        .modal-box label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            /* reuses the same label styling as .field-group on the auth pages */
+            font-family: var(--font-label);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.75rem;
+            color: var(--color-ink);
+            opacity: 0.7;
+        }
+        .modal-box input {
+            font-family: var(--font-body);
+            font-size: 1rem;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--color-ink);
+            border-radius: 2px;
+            background-color: var(--color-parchment-dim);
+            color: var(--color-ink);
+        }
+        .modal-box input:focus {
+            outline: 2px solid var(--color-gold);
+            outline-offset: 1px;
+        }
+        .modal-actions {
+            margin-top: var(--space-xs);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-xs);
         }
     </style>
+    <script>
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        async function apiFetch(url, options = {}) {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken,
+                    ...(options.headers || {})
+                };
+
+                const response = await fetch(url, { ...options, headers });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Request failed (${response.status}): ${text}`);
+                }
+
+                if (response.status === 204) return null;
+                return await response.json();
+            } catch (err) {
+                console.error('apiFetch error:', err);
+                alert('Something went wrong: ' + err.message);
+                throw err;
+            }
+        }
+    </script>
 </head>
 <body>
 <!-- Nav fragment creates navigation bar -->
@@ -77,8 +168,8 @@
 <main class="page-content">
     <h1>My Campaigns</h1>
 
-    <div class="campaign-grid">
-        <a th:href="@{/campaigns/new}" class="campaign-tile new-tile">+</a>
+    <div class="campaign-grid" id="campaign-grid">
+        <button type="button" class="campaign-tile new-tile" id="add-campaign-btn">+</button>
 
         <a th:each="campaign : ${campaigns}"
            th:href="@{/campaigns/{id}(id=${campaign.id})}"
@@ -89,5 +180,50 @@
         </a>
     </div>
 </main>
+<div id="campaign-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+        <h3>New Campaign</h3>
+        <label>
+            Campaign Name
+            <input type="text" id="campaign-modal-name" maxlength="50">
+        </label>
+        <div class="modal-actions">
+            <button type="button" id="campaign-modal-cancel" class="btn btn-secondary btn-small">Cancel</button>
+            <button type="button" id="campaign-modal-save" class="btn btn-primary btn-small">Create</button>
+        </div>
+    </div>
+</div>
+<script>
+    async function createCampaignRequest(name) {
+        return apiFetch('/api/campaigns', {
+            method: 'POST',
+            body: JSON.stringify({ name })
+        });
+    }
+
+    const campaignModal = document.getElementById('campaign-modal');
+    const campaignNameInput = document.getElementById('campaign-modal-name');
+    const campaignModalCancelBtn = document.getElementById('campaign-modal-cancel');
+    const campaignModalSaveBtn = document.getElementById('campaign-modal-save');
+
+    document.getElementById('add-campaign-btn').addEventListener('click', () => {
+        campaignNameInput.value = '';
+        campaignModal.style.display = 'flex';
+        campaignNameInput.focus();
+    });
+
+    campaignModalCancelBtn.addEventListener('click', () => campaignModal.style.display = 'none');
+    campaignModal.addEventListener('click', (e) => {
+        if (e.target === campaignModal) campaignModal.style.display = 'none';
+    });
+
+    campaignModalSaveBtn.addEventListener('click', async () => {
+        const name = campaignNameInput.value.trim();
+        if (!name) return;
+
+        const newCampaign = await createCampaignRequest(name);
+        window.location.href = `/campaigns/${newCampaign.id}`;
+    });
+</script>
 </body>
 </html>
