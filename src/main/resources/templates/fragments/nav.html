@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- th:fragment names this block "nav" so other templates can pull it in by name -->
+<header th:fragment="nav" class="app-nav">
+  <a th:href="@{/campaigns}" class="app-nav-brand">DND Encounter Tool</a>
+  <form th:action="@{/logout}" method="post" class="app-nav-logout">
+    <button type="submit" class="btn btn-secondary btn-small">Log Out</button>
+  </form>
+</header>
+</body>
+</html>

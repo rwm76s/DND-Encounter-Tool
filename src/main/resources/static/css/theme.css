@@ -167,3 +167,27 @@ a:hover { text-decoration: underline; }
     font-size: 0.9rem;
     margin-top: var(--space-sm);
 }
+
+/* ===== App nav (shared across authenticated pages) ===== */
+.app-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 3px double var(--color-gold); /* echoes the stat-card top-border motif */
+    background-color: var(--color-parchment-dim);
+}
+.app-nav-brand {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--color-ink); /* override default link color, brand shouldn't look like a hyperlink */
+}
+.app-nav-brand:hover { text-decoration: none; }
+.app-nav-logout { margin: 0; } /* form has default margin in some browsers, zero it out to align with brand */
+
+/* small variant of .btn for nav-level actions where full-size feels heavy */
+.btn-small {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+}
