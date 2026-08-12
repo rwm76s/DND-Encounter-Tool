@@ -15,32 +15,6 @@
             padding: var(--space-md);
         }
 
-        /* ===== Header: name, status, primary actions ===== */
-        .detail-header {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: var(--space-sm);
-            margin-bottom: var(--space-sm);
-        }
-        .detail-header h1 {
-            font-size: 1.75rem;
-        }
-        .status-tag {
-            font-family: var(--font-label);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.75rem;
-            color: var(--color-forest);
-        }
-        .status-tag.inactive { color: var(--color-ink); opacity: 0.5; } /* dims for completed campaigns, same idea as .campaign-tile.complete */
-        .detail-actions {
-            display: flex;
-            gap: var(--space-xs);
-            margin-bottom: var(--space-lg);
-        }
-
         /* ===== Section cards (Party Members / Templates / Encounters) ===== */
         .detail-section {
             margin-bottom: var(--space-md);
@@ -89,24 +63,6 @@
             align-items: center;
             gap: var(--space-xs);
         }
-
-        /* "+ Add X" trigger, styled as a dashed bar consistent with .new-tile on campaigns.html */
-        .add-row-btn {
-            width: 100%;
-            margin-top: var(--space-xs);
-            padding: 0.6rem;
-            font-family: var(--font-label);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.8rem;
-            color: var(--color-gold);
-            background: transparent;
-            border: 1px dashed var(--color-gold);
-            border-radius: 2px;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-        .add-row-btn:hover { background-color: rgba(201, 162, 39, 0.08); }
     </style>
     <script>
         const csrfToken = document.querySelector('meta[name="_csrf"]').content;
