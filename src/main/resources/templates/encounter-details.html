@@ -38,6 +38,14 @@
         gap: 16px;
     }
 
+    .combatant-grid > p {
+      width: 100%; /* grid is flex, so without this the message would only take up its own content width instead of its own row */
+      font-family: var(--font-body);
+      font-style: italic;
+      color: var(--color-ink);
+      opacity: 0.5;
+    }
+
     .combatant-tile {
         width: 240px;
         position: relative; /* still anchors the absolutely-positioned delete button up top */
@@ -119,7 +127,7 @@
     }
 
     /* narrower than the modal's .hp-slash-group (styled in theme.css) since the tile is still tighter than a modal */
-    .combatant-tile .hp-slash-group input {
+    .combatant-tile .hp-slash-group input[type="number"] {
         width: 56px;
     }
 
@@ -128,7 +136,8 @@
         margin-top: 8px;
     }
 
-    /* add-row-btn/add-row-btn-sm supply the shared dashed-trigger look (in theme.css); this just tints status green to distinguish it from the note trigger */
+    /* add-row-btn/add-row-btn-sm supply the shared dashed-trigger look (in theme.css).
+   Status gets tinted forest-green below; Note is left alone since add-row-btn's default gold already fits it. */
     .add-status-btn {
         color: var(--color-forest);
         border-color: var(--color-forest);
@@ -208,10 +217,6 @@
       background-color: var(--color-blood);
       border-color: var(--color-blood);
       color: var(--color-parchment);
-    }
-
-    .add-note-btn {
-        /* no color override needed - add-row-btn's default gold already fits, unlike add-status-btn which overrides to forest green */
     }
 
     .note-block {
@@ -361,7 +366,7 @@
          th:data-incapacitated="${c.incapacitated}"
          th:data-initiative="${c.initiative}">
 
-      <button type="button" class="delete-combatant-btn">&times;</button>
+      <button type="button" class="delete-combatant-btn" title="Remove combatant">&times;</button>
 
       <strong th:text="${c.name}"></strong>
       <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
@@ -416,7 +421,10 @@
 <div id="status-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
     <h3>Add Status</h3>
-    <input type="text" id="status-modal-input" maxlength="25" placeholder="e.g. Poisoned">
+    <label>
+      Status
+      <input type="text" id="status-modal-input" maxlength="25" placeholder="e.g. Poisoned">
+    </label>
     <div class="modal-actions">
       <button type="button" id="status-modal-cancel" class="btn btn-secondary btn-small">Cancel</button>
       <button type="button" id="status-modal-save" class="btn btn-primary btn-small">Add</button>
@@ -710,7 +718,7 @@
 
 function buildCombatantTile(data) {
     const tile = document.createElement('div');
-    tile.className = 'combatant-tile';
+    tile.className = 'combatant-tile' + (data.incapacitated ? ' incapacitated' : '');
     tile.dataset.combatantId = data.id;
     tile.dataset.incapacitated = data.incapacitated;
     tile.dataset.initiative = data.initiative === null ? '' : data.initiative;
@@ -731,7 +739,7 @@ function buildCombatantTile(data) {
     `;
 
     tile.innerHTML = `
-        <button type="button" class="delete-combatant-btn">&times;</button>
+        <button type="button" class="delete-combatant-btn" title="Remove combatant">&times;</button>
         <strong></strong>
         <span>${data.player ? ' (Player)' : ' (NPC)'}</span>
         <label>Initiative
