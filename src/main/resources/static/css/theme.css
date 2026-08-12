@@ -247,6 +247,20 @@ a:hover { text-decoration: underline; }
     outline: 2px solid var(--color-gold);
     outline-offset: 1px;
 }
+.modal-box select {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-ink);
+    border-radius: 2px;
+    background-color: var(--color-parchment-dim);
+    color: var(--color-ink);
+    cursor: pointer;
+}
+.modal-box select:focus {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
 .modal-actions {
     margin-top: var(--space-xs);
     display: flex;
@@ -273,4 +287,69 @@ a:hover { text-decoration: underline; }
     border-color: var(--color-ink);
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+/* ===== Detail page header (shared by campaign-detail.html + encounter-detail.html) ===== */
+.detail-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+.detail-header h1 {
+    font-size: 1.75rem;
+}
+.status-tag {
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    color: var(--color-forest);
+}
+.status-tag.inactive { color: var(--color-ink); opacity: 0.5; }
+.detail-actions {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+}
+
+/* Small "back to parent" link that sits above a detail page's header */
+.back-link {
+    display: inline-block;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.8rem;
+    color: var(--color-ink);
+    opacity: 0.65;
+    margin-bottom: var(--space-sm);
+}
+.back-link:hover {
+    opacity: 1;
+    color: var(--color-blood);
+    text-decoration: none;
+}
+/* "+ Add X" trigger, styled as a dashed bar consistent with .new-tile on campaigns.html */
+.add-row-btn {
+    width: 100%;
+    margin-top: var(--space-xs);
+    padding: 0.6rem;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    color: var(--color-gold);
+    background: transparent;
+    border: 1px dashed var(--color-gold);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.add-row-btn:hover { background-color: rgba(201, 162, 39, 0.08); }
+/* smaller variant of .add-row-btn for tighter contexts, e.g. inside a combatant tile */
+.add-row-btn-sm {
+    padding: 0.35rem;
+    font-size: 0.65rem;
 }

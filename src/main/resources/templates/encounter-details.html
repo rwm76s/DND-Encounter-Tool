@@ -7,6 +7,31 @@
   <meta name="_csrf_header" th:content="${_csrf.headerName}">
   <link rel="stylesheet" th:href="@{/css/theme.css}">
   <style>
+    .page-content {
+        max-width: 1100px; /* wider than campaign-detail's 720px - this page needs room for a multi-column tile grid */
+        margin: 0 auto;
+        padding: var(--space-md);
+    }
+
+    /* ===== Turn tracker bar: "Combatants" heading + prev/next controls ===== */
+    .turn-tracker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-sm);
+        padding-bottom: var(--space-xs);
+        border-bottom: 1px solid rgba(28, 27, 26, 0.12); /* faint rule separates tracker from the tile grid below */
+    }
+    .turn-tracker h2 {
+        font-size: 1.15rem;
+    }
+    .turn-controls {
+        display: flex;
+        gap: var(--space-xs);
+    }
+
     .combatant-grid {
         display: flex;
         flex-wrap: wrap;
@@ -14,192 +39,259 @@
     }
 
     .combatant-tile {
-        width: 200px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
+        width: 240px;
+        position: relative; /* still anchors the absolutely-positioned delete button up top */
+        background: var(--color-parchment-dim);
+        border: 1px solid var(--color-ink);
+        border-top: 4px double var(--color-gold); /* same stat-card header-bar language used everywhere else */
+        border-radius: 2px;
         padding: 12px;
-        position: relative;
-        padding-bottom: 36px;
         margin-top: 15px;
         margin-bottom: 15px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .current-turn {
-        width: 200px;
-        outline: 5px solid #ccc;
-        border-radius: 8px;
-        margin-top: 15px;
-        margin-bottom: 15px;
+    /* whose turn it is right now - needs to read at a glance across a full grid mid-combat, so it gets the boldest treatment on the page */
+    .combatant-tile.current-turn {
+        border-color: var(--color-blood);
+        border-top-color: var(--color-blood);
+        box-shadow: 0 0 0 2px var(--color-blood), 0 4px 10px rgba(139, 30, 30, 0.25);
     }
 
     .combatant-tile.incapacitated {
-        opacity: 0.5;
-        background-color: #fdd;
+        opacity: 0.6;
+        background-color: rgba(139, 30, 30, 0.06); /* faint blood tint reads as "down" without the old flat pink block */
+        border-top-style: solid; /* swaps the double-gold rule for a single line - same "closed" language as campaign-tile.complete */
+        border-top-color: var(--color-blood);
+    }
+
+    .combatant-tile strong {
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        display: block;
+    }
+
+    .combatant-tile > span {
+        /* the "(Player)" / "(NPC)" tag directly under the name */
+        font-family: var(--font-label);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.7rem;
+        color: var(--color-ink);
+        opacity: 0.6;
     }
 
     .combatant-tile label {
         display: block;
-        font-size: 0.8em;
+        font-family: var(--font-label);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.7rem;
+        color: var(--color-ink);
+        opacity: 0.7;
         margin-top: 6px;
     }
 
-    .combatant-tile input[type="number"] {
-        width: 60px;
+    .combatant-tile .checkbox-label {
+        /* Incapacitated checkbox + its text on one line, instead of the block stacking every other label uses */
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .combatant-tile input[type="checkbox"] {
+        accent-color: var(--color-blood); /* tints the native checkbox to match the theme instead of default blue */
     }
 
+    .combatant-tile input[type="number"] {
+        width: 68px;
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        padding: 0.3rem 0.4rem;
+        border: 1px solid var(--color-ink);
+        border-radius: 2px;
+        background: var(--color-parchment);
+        color: var(--color-ink);
+        margin-top: 0.2rem;
+    }
+    .combatant-tile input[type="number"]:focus {
+        outline: 2px solid var(--color-gold);
+        outline-offset: 1px;
+    }
+
+    /* narrower than the modal's .hp-slash-group (styled in theme.css) since the tile is still tighter than a modal */
+    .combatant-tile .hp-slash-group input {
+        width: 56px;
+    }
+
+    .combatant-tile .update-btn {
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    /* add-row-btn/add-row-btn-sm supply the shared dashed-trigger look (in theme.css); this just tints status green to distinguish it from the note trigger */
     .add-status-btn {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      font-size: 1.1em;
-      line-height: 1;
-      cursor: pointer;
+        color: var(--color-forest);
+        border-color: var(--color-forest);
+    }
+    .add-status-btn:hover {
+        background-color: rgba(61, 107, 76, 0.08);
     }
 
     .status-list {
         list-style: none;
         padding-left: 0;
         margin: 4px 0;
+        display: flex;
+        flex-wrap: wrap; /* pills wrap onto new lines instead of stacking one-per-row like the old block list did */
+        gap: 4px;
     }
 
     .status-list li {
-        display: flex;
-        justify-content: space-between;
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
-    }
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    .modal-box {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      min-width: 280px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .modal-box label {
-        display: flex;
-        flex-direction: column;
         gap: 4px;
-        font-size: 0.9em;
+        padding: 2px 6px;
+        font-family: var(--font-label);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.7rem;
+        color: var(--color-forest);
+        background: rgba(61, 107, 76, 0.08);
+        border: 1px solid rgba(61, 107, 76, 0.35);
+        border-radius: 12px; /* pill shape - status effects read as tags, not list rows */
     }
 
-    .modal-box input[type="text"],
-    .modal-box input[type="number"] {
-        padding: 6px 8px;
-        font-size: 1em;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .status-list .delete-status-btn {
+        /* small "x" glyph living inline inside the pill */
+        border: none;
+        background: transparent;
+        color: var(--color-forest);
+        font-size: 0.75rem;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.15s ease, color 0.15s ease;
+    }
+    .status-list .delete-status-btn:hover {
+        opacity: 1;
+        color: var(--color-blood); /* signals "this removes it" on hover, same red-for-destructive language as elsewhere */
     }
 
-    .modal-actions {
-        margin-top: 12px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
+    .statuses-label {
+        display: block;
+        font-family: var(--font-label);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.7rem;
+        color: var(--color-ink);
+        opacity: 0.7;
+        margin-top: 6px; /* matches the same label rhythm as the rest of the tile */
     }
 
     .delete-combatant-btn {
       position: absolute;
       top: 6px;
       right: 6px;
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
+      border: 1px solid var(--color-ink);
+      background: var(--color-parchment);
+      color: var(--color-ink);
+      font-size: 0.85rem;
       line-height: 1;
       cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
     }
-
-    .hp-group {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-    }
-
-    .hp-group input {
-        width: 45px;
+    .delete-combatant-btn:hover {
+      background-color: var(--color-blood);
+      border-color: var(--color-blood);
+      color: var(--color-parchment);
     }
 
     .add-note-btn {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    font-size: 1.1em;
-    line-height: 1;
-    cursor: pointer;
-}
+        /* no color override needed - add-row-btn's default gold already fits, unlike add-status-btn which overrides to forest green */
+    }
 
-.note-block {
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid #ccc;
-}
+    .note-block {
+        margin-top: 8px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(28, 27, 26, 0.15); /* faint divider between the stat fields above and the note below */
+    }
 
-.note-header {
-    display: flex;
-    justify-content: flex-end;
-    gap: 4px;
-    margin-bottom: 4px;
-}
+    .note-header {
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+        margin-bottom: 4px;
+    }
 
-.note-header button {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    line-height: 1;
-    cursor: pointer;
-}
+    /* minimize/delete icon buttons - neutral by default, minimize stays neutral on hover, delete goes blood-red like every other destructive action */
+    .note-header button {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid var(--color-ink);
+        background: var(--color-parchment);
+        color: var(--color-ink);
+        font-size: 0.75rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .note-minimize-btn:hover {
+        background-color: var(--color-ink);
+        color: var(--color-parchment);
+    }
+    .note-delete-btn:hover {
+        background-color: var(--color-blood);
+        border-color: var(--color-blood);
+        color: var(--color-parchment);
+    }
 
-.note-text {
-    white-space: pre-wrap;
-    margin: 0;
-    font-size: 0.9em;
-    cursor: pointer;
-}
+    .note-text {
+        white-space: pre-wrap;
+        margin: 0;
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: var(--color-ink);
+        cursor: pointer;
+    }
 
-.note-block.minimized .note-text {
-    display: none;
-}
+    .note-block.minimized .note-text {
+        display: none;
+    }
 
-.note-editor-wrapper {
-    margin-top: 8px;
-}
+    .note-editor-wrapper {
+        margin-top: 8px;
+    }
 
-.note-editor {
-    width: 100%;
-    box-sizing: border-box;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 60px;
-}
+    .note-editor {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid var(--color-ink);
+        border-radius: 2px;
+        background: var(--color-parchment);
+        color: var(--color-ink);
+        resize: vertical;
+        min-height: 60px;
+    }
+    .note-editor:focus {
+        outline: 2px solid var(--color-gold);
+        outline-offset: 1px;
+    }
 
-.note-editor-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    margin-top: 4px;
-}
+    .note-editor-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 4px;
+    }
   </style>
   <script>
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
@@ -233,80 +325,101 @@
 <body>
 <!-- Nav fragment creates navigation bar -->
 <div th:replace="~{fragments/nav :: nav}"></div>
-<p><a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}">&larr; Back to Campaign</a></p>
 
-<h1 th:text="${encounter.name}"></h1>
-<form th:action="@{/encounters/{id}/toggle-complete(id=${encounter.id})}" method="post">
-  <button type="submit" th:text="${encounter.complete} ? 'Mark as Active' : 'Mark as Complete'"></button>
-</form>
+<main class="page-content">
+  <a th:href="@{/campaigns/{id}(id=${encounter.campaign.id})}" class="back-link">&larr; Back to Campaign</a>
 
-<h2>Combatants</h2>
-<button type="button" onclick="previousTurn()">Previous Turn</button>
-<button type="button" onclick="nextTurn()">Next Turn</button>
-<div class="combatant-grid">
-  <div th:each="c : ${combatants}"
-       class="combatant-tile"
-       th:classappend="${c.incapacitated} ? 'incapacitated' : ''"
-       th:data-combatant-id="${c.id}"
-       th:data-incapacitated="${c.incapacitated}"
-       th:data-initiative="${c.initiative}">
+  <div class="detail-header">
+    <div>
+      <h1 th:text="${encounter.name}"></h1>
+      <span class="status-tag" th:classappend="${encounter.complete} ? 'inactive' : ''"
+            th:text="${encounter.complete} ? 'Completed' : 'Active'"></span>
+    </div>
+  </div>
 
-    <button type="button" class="delete-combatant-btn">&times;</button>
+  <div class="detail-actions">
+    <form th:action="@{/encounters/{id}/toggle-complete(id=${encounter.id})}" method="post">
+      <button type="submit" class="btn btn-secondary btn-small"
+              th:text="${encounter.complete} ? 'Mark as Active' : 'Mark as Complete'"></button>
+    </form>
+  </div>
 
-    <strong th:text="${c.name}"></strong>
-    <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
+  <!-- turn-tracker: heading + prev/next live in one flex row so controls sit beside the label, not stacked under it -->
+  <div class="turn-tracker">
+    <h2>Combatants</h2>
+    <div class="turn-controls">
+      <button type="button" class="btn btn-secondary btn-small" onclick="previousTurn()">&larr; Previous Turn</button>
+      <button type="button" class="btn btn-primary btn-small" onclick="nextTurn()">Next Turn &rarr;</button>
+    </div>
+  </div>
 
-    <label>
-      Initiative
-      <input type="number" class="initiative-input" th:value="${c.initiative}">
-    </label>
+  <div class="combatant-grid">
+    <div th:each="c : ${combatants}"
+         class="combatant-tile"
+         th:classappend="${c.incapacitated} ? 'incapacitated' : ''"
+         th:data-combatant-id="${c.id}"
+         th:data-incapacitated="${c.incapacitated}"
+         th:data-initiative="${c.initiative}">
 
-    <div th:unless="${c.player}">
-      <label class="hp-label">
-        HP
-        <span class="hp-group">
+      <button type="button" class="delete-combatant-btn">&times;</button>
+
+      <strong th:text="${c.name}"></strong>
+      <span th:text="${c.player} ? ' (Player)' : ' (NPC)'"></span>
+
+      <label>
+        Initiative
+        <input type="number" class="initiative-input" th:value="${c.initiative}">
+      </label>
+
+      <div th:unless="${c.player}">
+        <label class="hp-label">
+          HP
+          <span class="hp-slash-group">
                 <input type="number" class="hp-input" th:value="${c.hp}">
                 <span>/</span>
                 <input type="number" class="maxhp-input" th:value="${c.maxHp}">
             </span>
+        </label>
+        <label>
+          AC
+          <input type="number" class="ac-input" th:value="${c.ac}">
+        </label>
+      </div>
+
+      <label class="checkbox-label">
+        <input type="checkbox" class="incapacitated-input" th:checked="${c.incapacitated}">
+        Incapacitated
       </label>
-      <label>
-        AC
-        <input type="number" class="ac-input" th:value="${c.ac}">
-      </label>
+
+      <button type="button" class="update-btn btn btn-primary btn-small">Update</button>
+
+      <div class="statuses">
+        <strong class="statuses-label" th:if="${!c.statuses.isEmpty()}">Statuses:</strong>
+        <ul class="status-list">
+          <li th:each="s : ${c.statuses}" th:data-status-id="${s.id}">
+            <span th:text="${s.status}"></span>
+            <button type="button" class="delete-status-btn">x</button>
+          </li>
+        </ul>
+        <button type="button" class="add-status-btn add-row-btn add-row-btn-sm">+ Status</button>
+      </div>
+
+      <div class="note-section" th:attr="data-notes=${c.notes} ?: ''"></div>
     </div>
 
-    <label>
-      <input type="checkbox" class="incapacitated-input" th:checked="${c.incapacitated}">
-      Incapacitated
-    </label>
-
-    <button type="button" class="update-btn">Update</button>
-
-    <div class="statuses">
-      <strong class="statuses-label" th:if="${!c.statuses.isEmpty()}">Statuses:</strong>
-      <ul class="status-list">
-        <li th:each="s : ${c.statuses}" th:data-status-id="${s.id}">
-          <span th:text="${s.status}"></span>
-          <button type="button" class="delete-status-btn">x</button>
-        </li>
-      </ul>
-    </div>
-
-    <div class="note-section" th:attr="data-notes=${c.notes} ?: ''"></div>
-
-    <button type="button" class="add-status-btn">+</button>
+    <p th:if="${combatants.isEmpty()}">No combatants yet.</p>
   </div>
 
-  <p th:if="${combatants.isEmpty()}">No combatants yet.</p>
-</div>
+  <button type="button" id="add-combatant-btn" class="add-row-btn">+ Add NPC/Enemy</button>
+</main>
+
 <div id="status-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box">
     <h3>Add Status</h3>
     <input type="text" id="status-modal-input" maxlength="25" placeholder="e.g. Poisoned">
     <div class="modal-actions">
-      <button type="button" id="status-modal-cancel">Cancel</button>
-      <button type="button" id="status-modal-save">Add</button>
+      <button type="button" id="status-modal-cancel" class="btn btn-secondary btn-small">Cancel</button>
+      <button type="button" id="status-modal-save" class="btn btn-primary btn-small">Add</button>
     </div>
   </div>
 </div>
@@ -355,13 +468,12 @@
     </label>
 
     <div class="modal-actions">
-      <button type="button" id="combatant-modal-cancel">Cancel</button>
-      <button type="button" id="combatant-modal-save">Add</button>
+      <button type="button" id="combatant-modal-cancel" class="btn btn-secondary btn-small">Cancel</button>
+      <button type="button" id="combatant-modal-save" class="btn btn-primary btn-small">Add</button>
     </div>
   </div>
 </div>
 
-<button type="button" id="add-combatant-btn">+ Add NPC/Enemy</button>
 <script th:inline="javascript">
   const encounterId = /*[[${encounter.id}]]*/ 0;
   const initialTurnId = /*[[${encounter.currentTurn != null ? encounter.currentTurn.id : null}]]*/ null;
@@ -626,16 +738,16 @@ function buildCombatantTile(data) {
             <input type="number" class="initiative-input" value="${data.initiative ?? ''}">
         </label>
         ${hpBlock}
-        <label>
+        <label class="checkbox-label">
             <input type="checkbox" class="incapacitated-input" ${data.incapacitated ? 'checked' : ''}>
             Incapacitated
         </label>
-        <button type="button" class="update-btn">Update</button>
+        <button type="button" class="update-btn btn btn-primary btn-small">Update</button>
         <div class="statuses">
             <ul class="status-list"></ul>
+            <button type="button" class="add-status-btn add-row-btn add-row-btn-sm">+ Status</button>
         </div>
         <div class="note-section"></div>
-        <button type="button" class="add-status-btn">+</button>
     `;
 
     tile.querySelector('strong').textContent = data.name;
@@ -721,9 +833,9 @@ function renderNoteDisplay(section, tile, notesText) {
     if (!notesText) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'add-note-btn';
+        btn.className = 'add-note-btn add-row-btn add-row-btn-sm';
         btn.title = 'Add Note';
-        btn.textContent = '+';
+        btn.textContent = '+ Note';
         btn.addEventListener('click', () => renderNoteEditor(section, tile, ''));
         section.appendChild(btn);
         return;
@@ -765,8 +877,8 @@ function renderNoteEditor(section, tile, currentText) {
     wrapper.innerHTML = `
         <textarea class="note-editor" maxlength="1000"></textarea>
         <div class="note-editor-actions">
-            <button type="button" class="note-cancel-btn">Cancel</button>
-            <button type="button" class="note-save-btn">Save</button>
+            <button type="button" class="note-cancel-btn btn btn-secondary btn-small">Cancel</button>
+            <button type="button" class="note-save-btn btn btn-primary btn-small">Save</button>
         </div>
     `;
 
