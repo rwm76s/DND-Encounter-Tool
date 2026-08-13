@@ -8,62 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/theme.css}">
-    <style>
-        .page-content {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: var(--space-md);
-        }
-
-        /* ===== Section cards (Party Members / Templates / Encounters) ===== */
-        .detail-section {
-            margin-bottom: var(--space-md);
-        }
-        .detail-section h2 {
-            font-size: 1.15rem;
-            margin-bottom: var(--space-xs);
-        }
-        .item-list {
-            list-style: none; /* stat-cards shouldn't have bullet points */
-        }
-        .item-list li {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--space-xs) 0;
-            border-bottom: 1px solid rgba(28, 27, 26, 0.12); /* faint hairline divider between rows */
-            transition: background-color 0.15s ease;
-        }
-        .item-list li:hover {
-            background-color: rgba(201, 162, 39, 0.08); /* same tint as .add-row-btn:hover, keeps hover language consistent */
-        }
-        .item-list li.clickable-row {
-            cursor: pointer; /* only rows that navigate get the pointer cursor */
-        }
-        .item-list li:last-child { border-bottom: none; }
-        .item-info {
-            display: flex;
-            align-items: baseline;
-            gap: var(--space-xs);
-        }
-        .item-info .member-name,
-        .item-info a {
-            font-family: var(--font-body);
-            font-weight: 600;
-        }
-        .item-meta {
-            /* used for HP/AC readout and "(inactive)"/"(completed)" tags */
-            font-family: var(--font-label);
-            font-size: 0.8rem;
-            color: var(--color-ink);
-            opacity: 0.65;
-        }
-        .item-actions {
-            display: flex;
-            align-items: center;
-            gap: var(--space-xs);
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/campaign-details.css}">
     <script>
         const csrfToken = document.querySelector('meta[name="_csrf"]').content;
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
