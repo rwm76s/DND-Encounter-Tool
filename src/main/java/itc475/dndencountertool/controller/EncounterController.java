@@ -38,15 +38,6 @@ public class EncounterController {
         this.encounterService = encounterService;
     }
 
-    @GetMapping("/campaigns/{campaignId}/encounters/new")
-    public String newEncounterForm(@PathVariable Long campaignId,
-                                   @AuthenticationPrincipal User user,
-                                   Model model) {
-        Campaign campaign = getOwnedCampaignOrThrow(campaignId, user);
-        model.addAttribute("campaign", campaign);
-        return "new-encounter";
-    }
-
     @PostMapping("/campaigns/{campaignId}/encounters")
     public String createEncounter(@PathVariable Long campaignId,
                                   @AuthenticationPrincipal User user,
@@ -82,15 +73,6 @@ public class EncounterController {
         }
 
         return campaign;
-    }
-
-    @GetMapping("/encounters/{encounterId}/combatants/new")
-    public String newCombatantForm(@PathVariable Long encounterId,
-                                   @AuthenticationPrincipal User user,
-                                   Model model) {
-        Encounter encounter = getOwnedEncounterOrThrow(encounterId, user);
-        model.addAttribute("encounter", encounter);
-        return "new-combatant";
     }
 
     @PostMapping("/encounters/{encounterId}/combatants")

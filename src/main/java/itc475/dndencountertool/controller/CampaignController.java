@@ -40,19 +40,6 @@ public class CampaignController {
         return "campaigns";
     }
 
-    @GetMapping("/campaigns/new")
-    public String newCampaignForm(Model model) {
-        model.addAttribute("campaign", new Campaign());
-        return "createCampaign";
-    }
-
-    @PostMapping("/campaigns")
-    public String createCampaign(@AuthenticationPrincipal User user, @ModelAttribute Campaign campaign) {
-        campaign.setUser(user);
-        campaignRepository.save(campaign);
-        return "redirect:/campaigns";
-    }
-
     @GetMapping("/campaigns/{id}")
     public String viewCampaign(@PathVariable Long id, @AuthenticationPrincipal User user, Model model) {
         Campaign campaign = campaignRepository.findById(id)
