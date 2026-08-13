@@ -24,17 +24,6 @@ public class PartyMemberController {
         this.campaignRepository = campaignRepository;
     }
 
-    @GetMapping("/campaigns/{campaignId}/party-members/new")
-    public String newPartyMemberForm(@PathVariable Long campaignId,
-                                     @AuthenticationPrincipal User user,
-                                     Model model) {
-        Campaign campaign = getOwnedCampaignOrThrow(campaignId, user);
-
-        model.addAttribute("campaign", campaign);
-        model.addAttribute("partyMember", new PartyMember());
-        return "new-party-member";
-    }
-
     @PostMapping("/campaigns/{campaignId}/party-members")
     public String createPartyMember(@PathVariable Long campaignId,
                                     @AuthenticationPrincipal User user,

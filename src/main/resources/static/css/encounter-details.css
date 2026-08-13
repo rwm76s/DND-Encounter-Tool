@@ -1,0 +1,263 @@
+.page-content {
+    max-width: 1100px; /* wider than campaign-detail's 720px - this page needs room for a multi-column tile grid */
+    margin: 0 auto;
+    padding: var(--space-md);
+}
+/* ===== Turn tracker bar: "Combatants" heading + prev/next controls ===== */
+.turn-tracker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid rgba(28, 27, 26, 0.12); /* faint rule separates tracker from the tile grid below */
+}
+.turn-tracker h2 {
+    font-size: 1.15rem;
+}
+.turn-controls {
+    display: flex;
+    gap: var(--space-xs);
+}
+.combatant-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.combatant-grid > p {
+  width: 100%; /* grid is flex, so without this the message would only take up its own content width instead of its own row */
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--color-ink);
+  opacity: 0.5;
+}
+.combatant-tile {
+    width: 240px;
+    position: relative; /* still anchors the absolutely-positioned delete button up top */
+    background: var(--color-parchment-dim);
+    border: 1px solid var(--color-ink);
+    border-top: 4px double var(--color-gold); /* same stat-card header-bar language used everywhere else */
+    border-radius: 2px;
+    padding: 12px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* whose turn it is right now - needs to read at a glance across a full grid mid-combat, so it gets the boldest treatment on the page */
+.combatant-tile.current-turn {
+    border-color: var(--color-blood);
+    border-top-color: var(--color-blood);
+    box-shadow: 0 0 0 2px var(--color-blood), 0 4px 10px rgba(139, 30, 30, 0.25);
+}
+.combatant-tile.incapacitated {
+    opacity: 0.6;
+    background-color: rgba(139, 30, 30, 0.06); /* faint blood tint reads as "down" without the old flat pink block */
+    border-top-style: solid; /* swaps the double-gold rule for a single line - same "closed" language as campaign-tile.complete */
+    border-top-color: var(--color-blood);
+}
+.combatant-tile strong {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    display: block;
+}
+.combatant-tile > span {
+    /* the "(Player)" / "(NPC)" tag directly under the name */
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+    color: var(--color-ink);
+    opacity: 0.6;
+}
+.combatant-tile label {
+    display: block;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+    color: var(--color-ink);
+    opacity: 0.7;
+    margin-top: 6px;
+}
+.combatant-tile .checkbox-label {
+    /* Incapacitated checkbox + its text on one line, instead of the block stacking every other label uses */
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.combatant-tile input[type="checkbox"] {
+    accent-color: var(--color-blood); /* tints the native checkbox to match the theme instead of default blue */
+}
+.combatant-tile input[type="number"] {
+    width: 68px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--color-ink);
+    border-radius: 2px;
+    background: var(--color-parchment);
+    color: var(--color-ink);
+    margin-top: 0.2rem;
+}
+.combatant-tile input[type="number"]:focus {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+/* narrower than the modal's .hp-slash-group (styled in theme.css) since the tile is still tighter than a modal */
+.combatant-tile .hp-slash-group input[type="number"] {
+    width: 56px;
+}
+.combatant-tile .update-btn {
+    width: 100%;
+    margin-top: 8px;
+}
+/* add-row-btn/add-row-btn-sm supply the shared dashed-trigger look (in theme.css).
+tatus gets tinted forest-green below; Note is left alone since add-row-btn's default gold already fits it. */
+.add-status-btn {
+    color: var(--color-forest);
+    border-color: var(--color-forest);
+}
+.add-status-btn:hover {
+    background-color: rgba(61, 107, 76, 0.08);
+}
+.status-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 4px 0;
+    display: flex;
+    flex-wrap: wrap; /* pills wrap onto new lines instead of stacking one-per-row like the old block list did */
+    gap: 4px;
+}
+.status-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.7rem;
+    color: var(--color-forest);
+    background: rgba(61, 107, 76, 0.08);
+    border: 1px solid rgba(61, 107, 76, 0.35);
+    border-radius: 12px; /* pill shape - status effects read as tags, not list rows */
+}
+.status-list .delete-status-btn {
+    /* small "x" glyph living inline inside the pill */
+    border: none;
+    background: transparent;
+    color: var(--color-forest);
+    font-size: 0.75rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+.status-list .delete-status-btn:hover {
+    opacity: 1;
+    color: var(--color-blood); /* signals "this removes it" on hover, same red-for-destructive language as elsewhere */
+}
+.statuses-label {
+    display: block;
+    font-family: var(--font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+    color: var(--color-ink);
+    opacity: 0.7;
+    margin-top: 6px; /* matches the same label rhythm as the rest of the tile */
+}
+.delete-combatant-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--color-ink);
+  background: var(--color-parchment);
+  color: var(--color-ink);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.delete-combatant-btn:hover {
+  background-color: var(--color-blood);
+  border-color: var(--color-blood);
+  color: var(--color-parchment);
+}
+.note-block {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(28, 27, 26, 0.15); /* faint divider between the stat fields above and the note below */
+}
+.note-header {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+/* minimize/delete icon buttons - neutral by default, minimize stays neutral on hover, delete goes blood-red like every other destructive action */
+.note-header button {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--color-ink);
+    background: var(--color-parchment);
+    color: var(--color-ink);
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.note-minimize-btn:hover {
+    background-color: var(--color-ink);
+    color: var(--color-parchment);
+}
+.note-delete-btn:hover {
+    background-color: var(--color-blood);
+    border-color: var(--color-blood);
+    color: var(--color-parchment);
+}
+.note-text {
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--color-ink);
+    cursor: pointer;
+}
+.note-block.minimized .note-text {
+    display: none;
+}
+.note-editor-wrapper {
+    margin-top: 8px;
+}
+.note-editor {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-ink);
+    border-radius: 2px;
+    background: var(--color-parchment);
+    color: var(--color-ink);
+    resize: vertical;
+    min-height: 60px;
+}
+.note-editor:focus {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+.note-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 4px;
+}
