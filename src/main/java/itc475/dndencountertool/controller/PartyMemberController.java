@@ -18,6 +18,7 @@ public class PartyMemberController {
         this.partyMemberRepository = partyMemberRepository;
     }
 
+    // Convert this to RESTful endpoint so that this controller can be deleted
     @PostMapping("/party-members/{id}/toggle-active")
     public String togglePartyMemberActive(@PathVariable Long id, @AuthenticationPrincipal User user) {
         PartyMember member = partyMemberRepository.findById(id)

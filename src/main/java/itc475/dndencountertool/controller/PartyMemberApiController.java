@@ -24,6 +24,9 @@ public class PartyMemberApiController {
         this.campaignRepository = campaignRepository;
     }
 
+    record PartyMemberRequest(String name) {}
+    record PartyMemberResponse(Long id, String name, boolean active) {}
+
     @PostMapping("/campaigns/{campaignId}/party-members")
     public PartyMemberResponse createPartyMember(@PathVariable Long campaignId,
                                                  @AuthenticationPrincipal User user,
@@ -48,9 +51,6 @@ public class PartyMemberApiController {
         partyMemberRepository.delete(member);
         return ResponseEntity.noContent().build();
     }
-
-    record PartyMemberRequest(String name) {}
-    record PartyMemberResponse(Long id, String name, boolean active) {}
 
     private Campaign getOwnedCampaignOrThrow(Long campaignId, User user) {
         Campaign campaign = campaignRepository.findById(campaignId)

@@ -43,6 +43,7 @@ public class AuthController {
             return "register";
         }
 
+        // We want the password in the database to be encoded for better security
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 

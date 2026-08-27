@@ -19,6 +19,7 @@ public class CampaignApiController {
         this.campaignRepository = campaignRepository;
     }
 
+    // Used in campaigns.js to create a campaign
     @PostMapping("/campaigns")
     public CampaignResponse createCampaign(@AuthenticationPrincipal User user, @RequestBody CampaignRequest request) {
         Campaign campaign = new Campaign(request.name(), user);
@@ -29,6 +30,7 @@ public class CampaignApiController {
     record CampaignRequest(String name) {}
     record CampaignResponse(Long id, String name, boolean complete) {}
 
+    // Used in campaign-details.js to delete a campaign
     @DeleteMapping("/campaigns/{id}")
     public ResponseEntity<Void> deleteCampaign(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Campaign campaign = campaignRepository.findById(id)

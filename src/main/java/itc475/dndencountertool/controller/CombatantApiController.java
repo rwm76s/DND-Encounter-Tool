@@ -31,6 +31,7 @@ public class CombatantApiController {
         Combatant combatant = getOwnedCombatantOrThrow(combatantId, user);
 
         combatant.setInitiative(request.initiative());
+        // We only care about HP, MaxHP, and AC for NPCs
         if (!combatant.isPlayer()) {
             combatant.setHp(request.hp());
             combatant.setMaxHp(request.maxHp());
@@ -50,6 +51,8 @@ public class CombatantApiController {
         );
     }
 
+    // This only allows for users to add NPCs into encounters.
+    // Party members are automatically added at the beginning of the encounter.
     @PostMapping("/encounters/{encounterId}/combatants")
     public CombatantFullResponse createCombatant(@PathVariable Long encounterId,
                                                  @AuthenticationPrincipal User user,
@@ -83,6 +86,10 @@ public class CombatantApiController {
         return ResponseEntity.noContent().build();
     }
 
+    // Notes handling
+    record NoteRequest(String notes) {}
+    record NoteResponse(Long id, String notes) {}
+
     @PutMapping("/combatants/{combatantId}/notes")
     public NoteResponse updateNote(@PathVariable Long combatantId,
                                    @AuthenticationPrincipal User user,
@@ -101,9 +108,7 @@ public class CombatantApiController {
         return ResponseEntity.noContent().build();
     }
 
-    record NoteRequest(String notes) {}
-    record NoteResponse(Long id, String notes) {}
-
+    // Records used by combatant endpoints
     record CombatantUpdateRequest(Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
     record CombatantResponse(Long id, Integer initiative, Integer hp, Integer maxHp, Integer ac, boolean incapacitated) {}
     record NewCombatantRequest(String name, Integer initiative, Integer hp, Integer maxHp, Integer ac) {}

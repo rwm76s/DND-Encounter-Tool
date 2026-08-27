@@ -24,6 +24,8 @@ public class MonsterTemplateApiController {
         this.campaignRepository = campaignRepository;
     }
 
+    record TemplateRequest(String name, Integer hp, Integer maxHp, Integer ac) {}
+
     @PostMapping("/campaigns/{campaignId}/monster-templates")
     public TemplateResponse createTemplate(@PathVariable Long campaignId,
                                            @AuthenticationPrincipal User user,
@@ -50,12 +52,12 @@ public class MonsterTemplateApiController {
         return ResponseEntity.noContent().build();
     }
 
+    record TemplateResponse(Long id, String name, Integer hp, Integer maxHp, Integer ac) {}
+
+    // Called in createTemplate function
     private TemplateResponse toResponse(MonsterTemplate t) {
         return new TemplateResponse(t.getId(), t.getName(), t.getHp(), t.getMaxHp(), t.getAc());
     }
-
-    record TemplateRequest(String name, Integer hp, Integer maxHp, Integer ac) {}
-    record TemplateResponse(Long id, String name, Integer hp, Integer maxHp, Integer ac) {}
 
     private Campaign getOwnedCampaignOrThrow(Long campaignId, User user) {
         Campaign campaign = campaignRepository.findById(campaignId)
