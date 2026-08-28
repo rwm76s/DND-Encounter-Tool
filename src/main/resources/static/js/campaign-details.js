@@ -1,4 +1,4 @@
-// ---- Party Members ----
+// ---------- Party Members ----------
 
 async function createPartyMember(name) {
     return apiFetch(`/api/campaigns/${campaignId}/party-members`, {
@@ -66,7 +66,7 @@ function attachMemberDeleteHandler(button) {
 
 document.querySelectorAll('.delete-member-btn').forEach(attachMemberDeleteHandler);
 
-// ---- Encounters ----
+// ---------- Encounters ----------
 
 async function createEncounterRequest(name) {
     return apiFetch(`/api/campaigns/${campaignId}/encounters`, {
@@ -126,7 +126,7 @@ document.querySelectorAll('#encounter-list li.clickable-row').forEach(li => {
 
 document.querySelectorAll('.delete-encounter-btn').forEach(attachEncounterDeleteHandler);
 
-// ---- Delete Campaign ----
+// ---------- Delete Campaign ----------
 
 const deleteCampaignModal = document.getElementById('delete-campaign-modal');
 const deleteCampaignInput = document.getElementById('delete-campaign-input');
@@ -153,6 +153,8 @@ deleteCampaignConfirmBtn.addEventListener('click', async () => {
     await apiFetch(`/api/campaigns/${campaignId}`, { method: 'DELETE' });
     window.location.href = '/campaigns';
 });
+
+// ---------- Monster Templates (Prefabs) ----------
 
 async function createTemplateRequest(data) {
     return apiFetch(`/api/campaigns/${campaignId}/monster-templates`, {
