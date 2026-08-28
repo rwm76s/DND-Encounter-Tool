@@ -54,6 +54,7 @@ public class EncounterController {
         return encounter;
     }
 
+    // Convert this to a RESTful endpoint later
     @PostMapping("/encounters/{id}/toggle-complete")
     public String toggleEncounterComplete(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Encounter encounter = getOwnedEncounterOrThrow(id, user);

@@ -23,6 +23,9 @@ public class StatusApiController {
         this.combatantRepository = combatantRepository;
     }
 
+    record StatusRequest(String status) {}
+    record StatusResponse(Long id, String status) {}
+
     @PostMapping("/combatants/{combatantId}/statuses")
     public StatusResponse addStatus(@PathVariable Long combatantId,
                                     @AuthenticationPrincipal User user,
@@ -47,9 +50,6 @@ public class StatusApiController {
         statusRepository.delete(status);
         return ResponseEntity.noContent().build();
     }
-
-    record StatusRequest(String status) {}
-    record StatusResponse(Long id, String status) {}
 
     private Combatant getOwnedCombatantOrThrow(Long combatantId, User user) {
         Combatant combatant = combatantRepository.findById(combatantId)

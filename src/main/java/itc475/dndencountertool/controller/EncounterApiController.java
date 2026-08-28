@@ -33,12 +33,15 @@ public class EncounterApiController {
         this.encounterService = encounterService;
     }
 
+    record CurrentTurnRequest(Long combatantId) {}
+
     @PutMapping("/encounters/{encounterId}/current-turn")
     public ResponseEntity<Void> updateCurrentTurn(@PathVariable Long encounterId,
                                                   @AuthenticationPrincipal User user,
                                                   @RequestBody CurrentTurnRequest request) {
         Encounter encounter = getOwnedEncounterOrThrow(encounterId, user);
 
+        // Don't set the current turn to someone that doesn't exist
         if (request.combatantId() == null) {
             encounter.setCurrentTurn(null);
         } else {
@@ -55,8 +58,6 @@ public class EncounterApiController {
         encounterRepository.save(encounter);
         return ResponseEntity.noContent().build();
     }
-
-    record CurrentTurnRequest(Long combatantId) {}
 
     @PostMapping("/campaigns/{campaignId}/encounters")
     public EncounterResponse createEncounter(@PathVariable Long campaignId,

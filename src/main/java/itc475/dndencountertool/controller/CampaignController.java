@@ -67,6 +67,7 @@ public class CampaignController {
         return campaign;
     }
 
+    // Needs to be converted to RESTful endpoint
     @PostMapping("/campaigns/{id}/toggle-complete")
     public String toggleCampaignComplete(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Campaign campaign = getOwnedCampaignOrThrow(id, user);

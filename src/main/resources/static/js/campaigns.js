@@ -1,3 +1,5 @@
+// Sends the new campaign to the server; ownership is implicit since the
+// backend attaches whichever user is currently authenticated.
 async function createCampaignRequest(name) {
     return apiFetch('/api/campaigns', {
         method: 'POST',
@@ -17,6 +19,9 @@ document.getElementById('add-campaign-btn').addEventListener('click', () => {
 });
 
 campaignModalCancelBtn.addEventListener('click', () => campaignModal.style.display = 'none');
+
+// clicking the dark overlay (but not the box itself) closes the modal -
+// event.target is only the overlay when the click didn't land on a child element
 campaignModal.addEventListener('click', (e) => {
     if (e.target === campaignModal) campaignModal.style.display = 'none';
 });
@@ -26,5 +31,9 @@ campaignModalSaveBtn.addEventListener('click', async () => {
     if (!name) return;
 
     const newCampaign = await createCampaignRequest(name);
+
+    // redirect straight into the new campaign rather than inserting a tile
+    // into the grid, so this avoids needing to duplicate the tile building
+    // logic into this page.
     window.location.href = `/campaigns/${newCampaign.id}`;
 });
