@@ -1,6 +1,7 @@
 const csrfToken = document.querySelector('meta[name="_csrf"]').content;
 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
+// This function is reused in any pages that access an api endpoint
 async function apiFetch(url, options = {}) {
      try {
          const headers = {
